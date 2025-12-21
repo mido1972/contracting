@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Boqs\RelationManagers;
 
+use Filament\Actions\CreateAction;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Table;
 
@@ -13,8 +14,10 @@ class BoqItemsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                \Filament\Tables\Columns\TextColumn::make('id')
-                    ->label('#'),
+                \Filament\Tables\Columns\TextColumn::make('id')->label('#'),
+            ])
+            ->headerActions([
+                CreateAction::make(),
             ]);
     }
 }
