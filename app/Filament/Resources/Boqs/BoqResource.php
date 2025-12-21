@@ -7,6 +7,7 @@ use App\Filament\Resources\Boqs\Pages\EditBoq;
 use App\Filament\Resources\Boqs\Pages\ListBoqs;
 use App\Filament\Resources\Boqs\Schemas\BoqForm;
 use App\Filament\Resources\Boqs\Tables\BoqsTable;
+use App\Filament\Resources\Boqs\RelationManagers\BoqItemsRelationManager;
 use App\Models\Boq;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -25,7 +26,7 @@ class BoqResource extends Resource
     // ترتيب الظهور في القائمة
     protected static ?int $navigationSort = 10;
 
-    // ✅ التعريب والتنظيم (أفضل من properties لتفادي مشاكل الـ types)
+    // التعريب والتنظيم
     public static function getNavigationLabel(): string
     {
         return 'المقايسات';
@@ -56,19 +57,22 @@ class BoqResource extends Resource
         return BoqsTable::configure($table);
     }
 
+    /**
+     * ✅ ربط RelationManagers
+     */
     public static function getRelations(): array
     {
         return [
-            //
+            BoqItemsRelationManager::class,
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => ListBoqs::route('/'),
+            'index'  => ListBoqs::route('/'),
             'create' => CreateBoq::route('/create'),
-            'edit' => EditBoq::route('/{record}/edit'),
+            'edit'   => EditBoq::route('/{record}/edit'),
         ];
     }
 }
