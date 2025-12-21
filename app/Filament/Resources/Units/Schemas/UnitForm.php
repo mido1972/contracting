@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Filament\Resources\Units\Schemas;
+
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Schema;
+
+class UnitForm
+{
+    public static function configure(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                TextInput::make('code')
+                    ->label('الكود')
+                    ->required()
+                    ->maxLength(20)
+                    ->unique(ignoreRecord: true),
+
+                TextInput::make('name')
+                    ->label('الاسم')
+                    ->required()
+                    ->maxLength(255),
+
+                Textarea::make('notes')
+                    ->label('ملاحظات')
+                    ->rows(3)
+                    ->columnSpanFull(),
+            ]);
+    }
+}
