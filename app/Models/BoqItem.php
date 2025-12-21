@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class BoqItem extends Model
 {
@@ -20,20 +21,35 @@ class BoqItem extends Model
         'notes',
     ];
 
+    protected $casts = [
+        'quantity'    => 'decimal:3',
+        'unit_price'  => 'decimal:2',
+        'total_price' => 'decimal:2',
+        'sort_order'  => 'integer',
+    ];
+
     protected static function booted(): void
     {
+        // 1) حساب إجمالي السطر قبل الحفظ
         static::saving(function (BoqItem $item) {
             $qty = (float) ($item->quantity ?? 0);
             $price = (float) ($item->unit_price ?? 0);
+
             $item->total_price = round($qty * $price, 2);
         });
 
+        // 2) بعد الحفظ: حدّث إجمالي المقايسة (بعد Commit لو فيه Transaction)
         static::saved(function (BoqItem $item) {
-            $item->boq?->recalculateTotals();
+            DB::afterCommit(function () use ($item) {
+                $item->boq?->recalculateTotals();
+            });
         });
 
+        // 3) بعد الحذف: مهم جدًا لأن recalculateTotals بيعمل SUM من DB
         static::deleted(function (BoqItem $item) {
-            $item->boq?->recalculateTotals();
+            DB::afterCommit(function () use ($item) {
+                $item->boq?->recalculateTotals();
+            });
         });
     }
 

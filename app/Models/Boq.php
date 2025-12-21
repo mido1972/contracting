@@ -18,17 +18,27 @@ class Boq extends Model
         'total_amount',
     ];
 
+    protected $casts = [
+        'total_amount' => 'decimal:2',
+    ];
+
     public function items(): HasMany
     {
         return $this->hasMany(BoqItem::class, 'boq_id');
     }
 
+    /**
+     * Recalculate BOQ total from DB (SUM of boq_items.total_price).
+     * This must be called AFTER item is saved/deleted.
+     */
     public function recalculateTotals(): void
     {
-        $total = $this->items()->sum('total_price');
+        // Sum directly from DB (no eager loading / no cached relations)
+        $total = (float) $this->items()->sum('total_price');
 
-        $this->updateQuietly([
-            'total_amount' => $total,
-        ]);
+        // Save without firing events to avoid loops
+        $this->forceFill([
+            'total_amount' => round($total, 2),
+        ])->saveQuietly();
     }
 }
