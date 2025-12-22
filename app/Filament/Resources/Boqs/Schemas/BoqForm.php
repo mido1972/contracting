@@ -6,6 +6,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString;
 
 class BoqForm
 {
@@ -16,7 +17,7 @@ class BoqForm
                 ->label('كود المقايسة')
                 ->helperText('اتركه فارغًا ليتم توليده تلقائيًا')
                 ->maxLength(50)
-                ->dehydrated(false), // لا يرسل قيمة فاضية للـ DB
+                ->dehydrated(false),
 
             TextInput::make('name')
                 ->label('اسم المقايسة')
@@ -34,12 +35,18 @@ class BoqForm
                 ->default('DRAFT')
                 ->required(),
 
-            // ✅ إجمالي المقايسة (Read-only)
+            // ✅ إجمالي المقايسة بشكل Badge
             Placeholder::make('total_amount_view')
                 ->label('إجمالي المقايسة')
-                ->content(function ($record): string {
+                ->content(function ($record) {
                     $total = (float) ($record?->total_amount ?? 0);
-                    return number_format($total, 2);
+                    $txt = number_format($total, 2);
+
+                    return new HtmlString(
+                        '<div style="display:inline-block;padding:10px 14px;border-radius:10px;background:#f5f5f5;font-weight:700;font-size:18px;">'
+                        . $txt .
+                        '</div>'
+                    );
                 }),
         ]);
     }
