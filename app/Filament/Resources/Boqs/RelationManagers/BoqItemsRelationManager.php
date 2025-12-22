@@ -2,17 +2,22 @@
 
 namespace App\Filament\Resources\Boqs\RelationManagers;
 
+use App\Models\WorkItem;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Table;
-use App\Models\WorkItem;
 
 class BoqItemsRelationManager extends RelationManager
 {
     protected static string $relationship = 'items';
+
+    protected function isDraft(): bool
+    {
+        return (string) ($this->getOwnerRecord()?->status ?? '') === 'DRAFT';
+    }
 
     public function table(Table $table): Table
     {
@@ -44,6 +49,7 @@ class BoqItemsRelationManager extends RelationManager
             ])
             ->headerActions([
                 CreateAction::make()
+                    ->visible(fn () => $this->isDraft())
                     ->form([
                         Forms\Components\TextInput::make('sort_order')
                             ->label('ترتيب')
@@ -103,6 +109,7 @@ class BoqItemsRelationManager extends RelationManager
             ])
             ->actions([
                 EditAction::make()
+                    ->visible(fn () => $this->isDraft())
                     ->form([
                         Forms\Components\TextInput::make('sort_order')
                             ->label('ترتيب')
@@ -114,6 +121,7 @@ class BoqItemsRelationManager extends RelationManager
                             ->relationship('workItem', 'name')
                             ->searchable()
                             ->preload()
+                            ->required()
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {
                                 if (! $state) {
@@ -125,8 +133,7 @@ class BoqItemsRelationManager extends RelationManager
                                 if ($unitId) {
                                     $set('unit_id', $unitId);
                                 }
-                            })
-                            ->required(),
+                            }),
 
                         Forms\Components\Select::make('unit_id')
                             ->label('الوحدة')
@@ -151,7 +158,8 @@ class BoqItemsRelationManager extends RelationManager
                             ->columnSpanFull(),
                     ]),
 
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->visible(fn () => $this->isDraft()),
             ]);
     }
 }
