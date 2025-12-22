@@ -16,9 +16,8 @@ class BoqItemsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            // ✅ ترتيب العرض حسب sort_order ثم id
-            ->defaultSort('sort_order', 'asc')
-            ->defaultSort('id', 'asc')
+            // ✅ ترتيب العرض حسب sort_order ثم id (مضمون)
+            ->modifyQueryUsing(fn ($query) => $query->orderBy('sort_order')->orderBy('id'))
             ->columns([
                 \Filament\Tables\Columns\TextColumn::make('sort_order')
                     ->label('ترتيب')
@@ -49,8 +48,14 @@ class BoqItemsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('sort_order')
                             ->label('ترتيب')
                             ->numeric()
-                            ->default(1)
-                            ->required(),
+                            ->required()
+                            ->default(function (RelationManager $livewire): int {
+                                $max = (int) $livewire->getOwnerRecord()
+                                    ->items()
+                                    ->max('sort_order');
+
+                                return $max + 1;
+                            }),
 
                         Forms\Components\Select::make('work_item_id')
                             ->label('بند العمل')
