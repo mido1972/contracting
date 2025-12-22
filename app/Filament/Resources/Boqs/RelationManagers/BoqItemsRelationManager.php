@@ -16,8 +16,13 @@ class BoqItemsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            // ✅ ترتيب العرض حسب sort_order ثم id
+            ->defaultSort('sort_order', 'asc')
+            ->defaultSort('id', 'asc')
             ->columns([
-                \Filament\Tables\Columns\TextColumn::make('id')->label('#'),
+                \Filament\Tables\Columns\TextColumn::make('sort_order')
+                    ->label('ترتيب')
+                    ->sortable(),
 
                 \Filament\Tables\Columns\TextColumn::make('workItem.name')
                     ->label('بند العمل')
@@ -27,17 +32,26 @@ class BoqItemsRelationManager extends RelationManager
                     ->label('الوحدة'),
 
                 \Filament\Tables\Columns\TextColumn::make('quantity')
-                    ->label('الكمية'),
+                    ->label('الكمية')
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 3)),
 
                 \Filament\Tables\Columns\TextColumn::make('unit_price')
-                    ->label('سعر الوحدة'),
+                    ->label('سعر الوحدة')
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 2)),
 
                 \Filament\Tables\Columns\TextColumn::make('total_price')
-                    ->label('الإجمالي'),
+                    ->label('الإجمالي')
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 2)),
             ])
             ->headerActions([
                 CreateAction::make()
                     ->form([
+                        Forms\Components\TextInput::make('sort_order')
+                            ->label('ترتيب')
+                            ->numeric()
+                            ->default(1)
+                            ->required(),
+
                         Forms\Components\Select::make('work_item_id')
                             ->label('بند العمل')
                             ->relationship('workItem', 'name')
@@ -63,11 +77,21 @@ class BoqItemsRelationManager extends RelationManager
                             ->numeric()
                             ->required()
                             ->default(0),
+
+                        Forms\Components\Textarea::make('notes')
+                            ->label('ملاحظات')
+                            ->rows(2)
+                            ->columnSpanFull(),
                     ]),
             ])
             ->actions([
                 EditAction::make()
                     ->form([
+                        Forms\Components\TextInput::make('sort_order')
+                            ->label('ترتيب')
+                            ->numeric()
+                            ->required(),
+
                         Forms\Components\Select::make('work_item_id')
                             ->label('بند العمل')
                             ->relationship('workItem', 'name')
@@ -91,6 +115,11 @@ class BoqItemsRelationManager extends RelationManager
                             ->label('سعر الوحدة')
                             ->numeric()
                             ->required(),
+
+                        Forms\Components\Textarea::make('notes')
+                            ->label('ملاحظات')
+                            ->rows(2)
+                            ->columnSpanFull(),
                     ]),
 
                 DeleteAction::make(),
