@@ -8,6 +8,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Tables;
 use Filament\Tables\Table;
 
 class BoqItemsRelationManager extends RelationManager
@@ -22,30 +23,42 @@ class BoqItemsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            // ترتيب البنود
             ->modifyQueryUsing(fn ($query) => $query->orderBy('sort_order')->orderBy('id'))
             ->columns([
-                \Filament\Tables\Columns\TextColumn::make('sort_order')
+                Tables\Columns\TextColumn::make('sort_order')
                     ->label('ترتيب'),
 
-                \Filament\Tables\Columns\TextColumn::make('workItem.name')
+                Tables\Columns\TextColumn::make('workItem.name')
                     ->label('بند العمل')
-                    ->wrap(),
+                    ->wrap()
+                    ->searchable(), // ✅ search على اسم بند العمل
 
-                \Filament\Tables\Columns\TextColumn::make('unit.name')
+                Tables\Columns\TextColumn::make('unit.name')
                     ->label('الوحدة'),
 
-                \Filament\Tables\Columns\TextColumn::make('quantity')
+                Tables\Columns\TextColumn::make('quantity')
                     ->label('الكمية')
                     ->formatStateUsing(fn ($state) => number_format((float) $state, 3)),
 
-                \Filament\Tables\Columns\TextColumn::make('unit_price')
+                Tables\Columns\TextColumn::make('unit_price')
                     ->label('سعر الوحدة')
                     ->formatStateUsing(fn ($state) => number_format((float) $state, 2)),
 
-                \Filament\Tables\Columns\TextColumn::make('total_price')
+                Tables\Columns\TextColumn::make('total_price')
                     ->label('الإجمالي')
                     ->formatStateUsing(fn ($state) => number_format((float) $state, 2)),
+
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('ملاحظات')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->wrap()
+                    ->searchable(), // ✅ search على notes
+            ])
+            ->filters([
+                // فلتر بسيط للوحدة (اختياري لكنه مفيد)
+                Tables\Filters\SelectFilter::make('unit_id')
+                    ->label('الوحدة')
+                    ->relationship('unit', 'name'),
             ])
             ->headerActions([
                 CreateAction::make()
@@ -71,15 +84,10 @@ class BoqItemsRelationManager extends RelationManager
                             ->required()
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {
-                                if (! $state) {
-                                    return;
-                                }
+                                if (! $state) return;
 
                                 $unitId = WorkItem::where('id', $state)->value('unit_id');
-
-                                if ($unitId) {
-                                    $set('unit_id', $unitId);
-                                }
+                                if ($unitId) $set('unit_id', $unitId);
                             }),
 
                         Forms\Components\Select::make('unit_id')
@@ -124,15 +132,10 @@ class BoqItemsRelationManager extends RelationManager
                             ->required()
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set) {
-                                if (! $state) {
-                                    return;
-                                }
+                                if (! $state) return;
 
                                 $unitId = WorkItem::where('id', $state)->value('unit_id');
-
-                                if ($unitId) {
-                                    $set('unit_id', $unitId);
-                                }
+                                if ($unitId) $set('unit_id', $unitId);
                             }),
 
                         Forms\Components\Select::make('unit_id')
@@ -158,8 +161,7 @@ class BoqItemsRelationManager extends RelationManager
                             ->columnSpanFull(),
                     ]),
 
-                DeleteAction::make()
-                    ->visible(fn () => $this->isDraft()),
+                DeleteAction::make()->visible(fn () => $this->isDraft()),
             ]);
     }
 }
