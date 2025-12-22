@@ -8,6 +8,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Table;
+use App\Models\WorkItem;
 
 class BoqItemsRelationManager extends RelationManager
 {
@@ -16,12 +17,11 @@ class BoqItemsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            // ✅ ترتيب العرض حسب sort_order ثم id (مضمون)
+            // ترتيب البنود
             ->modifyQueryUsing(fn ($query) => $query->orderBy('sort_order')->orderBy('id'))
             ->columns([
                 \Filament\Tables\Columns\TextColumn::make('sort_order')
-                    ->label('ترتيب')
-                    ->sortable(),
+                    ->label('ترتيب'),
 
                 \Filament\Tables\Columns\TextColumn::make('workItem.name')
                     ->label('بند العمل')
@@ -62,7 +62,19 @@ class BoqItemsRelationManager extends RelationManager
                             ->relationship('workItem', 'name')
                             ->searchable()
                             ->preload()
-                            ->required(),
+                            ->required()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if (! $state) {
+                                    return;
+                                }
+
+                                $unitId = WorkItem::where('id', $state)->value('unit_id');
+
+                                if ($unitId) {
+                                    $set('unit_id', $unitId);
+                                }
+                            }),
 
                         Forms\Components\Select::make('unit_id')
                             ->label('الوحدة')
@@ -102,6 +114,18 @@ class BoqItemsRelationManager extends RelationManager
                             ->relationship('workItem', 'name')
                             ->searchable()
                             ->preload()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if (! $state) {
+                                    return;
+                                }
+
+                                $unitId = WorkItem::where('id', $state)->value('unit_id');
+
+                                if ($unitId) {
+                                    $set('unit_id', $unitId);
+                                }
+                            })
                             ->required(),
 
                         Forms\Components\Select::make('unit_id')
