@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -25,21 +26,20 @@ class Boq extends Model
         'total_amount' => 'decimal:2',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function branch(): BelongsTo
     {
-        return $this->belongsTo(Branch::class);
-    }
-
-    public function currencyCode(): string
-    {
-        return $this->branch?->currency_code
-            ?? $this->company?->currency_code
-            ?? 'SAR';
+        return $this->belongsTo(Branch::class, 'branch_id');
     }
 
     public function items(): HasMany
@@ -47,9 +47,32 @@ class Boq extends Model
         return $this->hasMany(BoqItem::class, 'boq_id');
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Resolve currency with fallback:
+     * BOQ.branch → BOQ.company → app default
+     */
+    public function currencyCode(): string
+    {
+        return $this->branch?->currencyCode()
+            ?: $this->company?->currencyCode()
+            ?: config('app.currency_default', 'SAR');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Business Logic
+    |--------------------------------------------------------------------------
+    */
+
     /**
      * Recalculate BOQ total from DB (SUM of boq_items.total_price).
-     * This must be called AFTER item is saved/deleted.
+     * Must be called AFTER item is saved/deleted.
      */
     public function recalculateTotals(): void
     {
@@ -60,5 +83,21 @@ class Boq extends Model
         $this->forceFill([
             'total_amount' => round($total, 2),
         ])->saveQuietly();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes (Multi-tenant ready)
+    |--------------------------------------------------------------------------
+    */
+
+    public function scopeForCompany(Builder $query, int $companyId): Builder
+    {
+        return $query->where('company_id', $companyId);
+    }
+
+    public function scopeForBranch(Builder $query, int $branchId): Builder
+    {
+        return $query->where('branch_id', $branchId);
     }
 }

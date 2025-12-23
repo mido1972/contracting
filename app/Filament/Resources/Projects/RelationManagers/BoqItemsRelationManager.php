@@ -14,7 +14,7 @@ class BoqItemsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        $currency = fn (): string => $this->getOwnerRecord()?->currencyCode() ?? 'SAR';
+        $currency = fn (): string => $this->getOwnerRecord()?->currencyCode() ?? config('app.currency_default', 'SAR');
 
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['workItem', 'unit']))
@@ -33,6 +33,7 @@ class BoqItemsRelationManager extends RelationManager
 
                 TextColumn::make('unit.name')
                     ->label('الوحدة')
+                    ->wrap()
                     ->sortable()
                     ->toggleable(),
 
@@ -40,13 +41,15 @@ class BoqItemsRelationManager extends RelationManager
                     ->label('الكمية')
                     ->numeric(decimalPlaces: 3)
                     ->sortable()
-                    ->alignEnd(),
+                    ->alignEnd()
+                    ->toggleable(),
 
                 TextColumn::make('unit_price')
                     ->label('سعر الوحدة')
                     ->money($currency)
                     ->sortable()
-                    ->alignEnd(),
+                    ->alignEnd()
+                    ->toggleable(),
 
                 TextColumn::make('total_price')
                     ->label('الإجمالي')
@@ -57,7 +60,8 @@ class BoqItemsRelationManager extends RelationManager
                             ->money($currency),
                     ])
                     ->sortable()
-                    ->alignEnd(),
+                    ->alignEnd()
+                    ->toggleable(),
 
                 TextColumn::make('notes')
                     ->label('ملاحظات')

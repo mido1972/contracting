@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Projects\Schemas;
 
-use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class ProjectInfolist
@@ -15,7 +15,8 @@ class ProjectInfolist
                 Section::make('بيانات المشروع')
                     ->components([
                         TextEntry::make('code')
-                            ->label('كود المشروع'),
+                            ->label('كود المشروع')
+                            ->placeholder('-'),
 
                         TextEntry::make('name')
                             ->label('اسم المشروع'),
@@ -25,7 +26,8 @@ class ProjectInfolist
                             ->badge(),
 
                         TextEntry::make('geha.Geha_Name')
-                            ->label('الجهة (ERP)'),
+                            ->label('الجهة (ERP)')
+                            ->placeholder('-'),
 
                         TextEntry::make('notes')
                             ->label('ملاحظات')
@@ -38,18 +40,17 @@ class ProjectInfolist
                     ->visible(fn ($record) => filled($record?->boq_id))
                     ->components([
                         TextEntry::make('boq.name')
-                            ->label('المقايسة'),
+                            ->label('المقايسة')
+                            ->placeholder('-'),
 
                         TextEntry::make('boq.total_amount')
                             ->label('إجمالي المقايسة')
-                            ->money('EGP') // لو عايز نغير العملة لاحقًا
+                            ->money(fn ($record) => $record?->currencyCode() ?? config('app.currency_default', 'SAR'))
                             ->placeholder('-'),
 
-                        TextEntry::make('boq.items_count')
+                        TextEntry::make('boq_items_count')
                             ->label('عدد البنود')
-                            ->state(function ($record) {
-                                return $record->boq?->items()->count() ?? 0;
-                            }),
+                            ->state(fn ($record) => $record?->boqItems()->count() ?? 0),
                     ])
                     ->columns(3),
             ]);
