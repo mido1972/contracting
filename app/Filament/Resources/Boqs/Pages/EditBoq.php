@@ -7,10 +7,21 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Database\Eloquent\Builder;
 
 class EditBoq extends EditRecord
 {
     protected static string $resource = BoqResource::class;
+
+    /**
+     * ✅ Security: prevent editing BOQs outside current branch/company context.
+     * If someone tries /admin/boqs/{id}/edit for another branch → 404.
+     */
+    protected function getRecordQuery(): Builder
+    {
+        return parent::getRecordQuery()
+            ->forCurrentContext();
+    }
 
     protected function getHeaderActions(): array
     {

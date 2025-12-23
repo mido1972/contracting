@@ -12,6 +12,7 @@ use App\Filament\Resources\Projects\Schemas\ProjectInfolist;
 use App\Filament\Resources\Projects\Tables\ProjectsTable;
 use App\Models\Project;
 use BackedEnum;
+use Filament\Panel;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -48,7 +49,7 @@ class ProjectResource extends Resource
     }
 
     // نخليه ثابت علشان الروابط ما تتغيرش
-    public static function getSlug(?\Filament\Panel $panel = null): string
+    public static function getSlug(?Panel $panel = null): string
     {
         return 'projects';
     }
@@ -68,9 +69,13 @@ class ProjectResource extends Resource
         return ProjectsTable::configure($table);
     }
 
+    /**
+     * ✅ أهم نقطة: فلترة المشاريع حسب الفرع/الشركة الحالية للمستخدم
+     */
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->forCurrentContext()
             ->with(['geha', 'boq']);
     }
 
@@ -84,10 +89,10 @@ class ProjectResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListProjects::route('/'),
+            'index'  => ListProjects::route('/'),
             'create' => CreateProject::route('/create'),
-            'view' => ViewProject::route('/{record}'),
-            'edit' => EditProject::route('/{record}/edit'),
+            'view'   => ViewProject::route('/{record}'),
+            'edit'   => EditProject::route('/{record}/edit'),
         ];
     }
 }

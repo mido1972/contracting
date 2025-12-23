@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class Project extends Model
 {
@@ -24,8 +25,7 @@ class Project extends Model
     ];
 
     protected $casts = [
-        // لو status ثابت كـ string تمام، سيبها
-        // 'geha_code' => 'integer', // اختياري لو عندك type ثابت
+        // 'geha_code' => 'integer', // اختياري
     ];
 
     /*
@@ -86,7 +86,7 @@ class Project extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | Scopes (مفيدين جدًا لما نعمل Multi-tenant)
+    | Scopes (Multi-tenant / Context aware)
     |--------------------------------------------------------------------------
     */
 
@@ -98,5 +98,32 @@ class Project extends Model
     public function scopeForBranch(Builder $query, int $branchId): Builder
     {
         return $query->where('branch_id', $branchId);
+    }
+
+    /**
+     * Filter projects by the authenticated user's current context:
+     * - current_branch_id (strongest)
+     * - current_company_id (fallback)
+     *
+     * @param  Builder<Project>  $query
+     */
+    public function scopeForCurrentContext(Builder $query): Builder
+    {
+        $user = Auth::user();
+
+        // CLI / Seeder / unauthenticated
+        if (! $user) {
+            return $query;
+        }
+
+        if (filled($user->current_branch_id)) {
+            return $query->where('branch_id', (int) $user->current_branch_id);
+        }
+
+        if (filled($user->current_company_id)) {
+            return $query->where('company_id', (int) $user->current_company_id);
+        }
+
+        return $query;
     }
 }

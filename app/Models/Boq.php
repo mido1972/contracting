@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class Boq extends Model
 {
@@ -14,9 +15,10 @@ class Boq extends Model
     protected $fillable = [
         'company_id',
         'branch_id',
+        'project_id',   // ✅ الجديد (أفضل)
         'code',
         'name',
-        'project_ref',
+        'project_ref',  // ✅ مؤقت للتوافق/الطباعة (اختياري)
         'status',
         'notes',
         'total_amount',
@@ -40,6 +42,14 @@ class Boq extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
+    /**
+     * ✅ Preferred relation (FK)
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'project_id');
     }
 
     public function items(): HasMany
@@ -76,10 +86,8 @@ class Boq extends Model
      */
     public function recalculateTotals(): void
     {
-        // Sum directly from DB (no eager loading / no cached relations)
         $total = (float) $this->items()->sum('total_price');
 
-        // Save without firing events to avoid loops
         $this->forceFill([
             'total_amount' => round($total, 2),
         ])->saveQuietly();
@@ -99,5 +107,32 @@ class Boq extends Model
     public function scopeForBranch(Builder $query, int $branchId): Builder
     {
         return $query->where('branch_id', $branchId);
+    }
+
+    /**
+     * Filter BOQs by the authenticated user's current context:
+     * - current_branch_id (strongest)
+     * - current_company_id (fallback)
+     * If no auth user (CLI/Seeder), no filter is applied.
+     *
+     * @param  Builder<Boq>  $query
+     */
+    public function scopeForCurrentContext(Builder $query): Builder
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return $query;
+        }
+
+        if (filled($user->current_branch_id)) {
+            return $query->where('branch_id', (int) $user->current_branch_id);
+        }
+
+        if (filled($user->current_company_id)) {
+            return $query->where('company_id', (int) $user->current_company_id);
+        }
+
+        return $query;
     }
 }

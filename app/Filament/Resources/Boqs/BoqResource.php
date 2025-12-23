@@ -5,15 +5,16 @@ namespace App\Filament\Resources\Boqs;
 use App\Filament\Resources\Boqs\Pages\CreateBoq;
 use App\Filament\Resources\Boqs\Pages\EditBoq;
 use App\Filament\Resources\Boqs\Pages\ListBoqs;
+use App\Filament\Resources\Boqs\RelationManagers\BoqItemsRelationManager;
 use App\Filament\Resources\Boqs\Schemas\BoqForm;
 use App\Filament\Resources\Boqs\Tables\BoqsTable;
-use App\Filament\Resources\Boqs\RelationManagers\BoqItemsRelationManager;
 use App\Models\Boq;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class BoqResource extends Resource
 {
@@ -55,6 +56,15 @@ class BoqResource extends Resource
     public static function table(Table $table): Table
     {
         return BoqsTable::configure($table);
+    }
+
+    /**
+     * ✅ فلترة المقايسات حسب الفرع/الشركة الحالية للمستخدم
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->forCurrentContext();
     }
 
     /**

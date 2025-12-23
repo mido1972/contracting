@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Boqs\Schemas;
 
+use App\Models\Project;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -24,18 +25,40 @@ class BoqForm
                 ->required()
                 ->maxLength(255),
 
+            /**
+             * ✅ اختيار المشروع (FK حقيقي)
+             * مفلتر حسب الفرع / الشركة الحالية
+             */
+            Select::make('project_id')
+                ->label('المشروع')
+                ->searchable()
+                ->preload()
+                ->relationship(
+                    name: 'project',
+                    titleAttribute: 'name',
+                    modifyQueryUsing: fn ($query) =>
+                        $query->forCurrentContext()->orderBy('code')
+                )
+                ->getOptionLabelFromRecordUsing(
+                    fn (Project $p) => "{$p->code} - {$p->name}"
+                )
+                ->placeholder('اختر المشروع')
+                ->required(),
+
             Select::make('status')
                 ->label('الحالة')
                 ->options([
-                    'DRAFT' => 'مسودة',
+                    'DRAFT'     => 'مسودة',
                     'SUBMITTED' => 'مُرسلة',
-                    'AWARDED' => 'تمت الترسية',
+                    'AWARDED'   => 'تمت الترسية',
                     'CANCELLED' => 'ملغاة',
                 ])
                 ->default('DRAFT')
                 ->required(),
 
-            // ✅ إجمالي المقايسة بشكل Badge
+            /**
+             * ✅ إجمالي المقايسة (عرض فقط)
+             */
             Placeholder::make('total_amount_view')
                 ->label('إجمالي المقايسة')
                 ->content(function ($record) {
