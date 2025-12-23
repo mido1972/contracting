@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Boq extends Model
@@ -10,6 +11,8 @@ class Boq extends Model
     protected $table = 'boqs';
 
     protected $fillable = [
+        'company_id',
+        'branch_id',
         'code',
         'name',
         'project_ref',
@@ -21,6 +24,23 @@ class Boq extends Model
     protected $casts = [
         'total_amount' => 'decimal:2',
     ];
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function currencyCode(): string
+    {
+        return $this->branch?->currency_code
+            ?? $this->company?->currency_code
+            ?? 'SAR';
+    }
 
     public function items(): HasMany
     {
