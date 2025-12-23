@@ -8,12 +8,6 @@ return [
     |--------------------------------------------------------------------------
     | Default Database Connection Name
     |--------------------------------------------------------------------------
-    |
-    | Here you may specify which of the database connections below you wish
-    | to use as your default connection for database operations. This is
-    | the connection which will be utilized unless another connection
-    | is explicitly specified when you execute a query / statement.
-    |
     */
 
     'default' => env('DB_CONNECTION', 'sqlite'),
@@ -22,11 +16,6 @@ return [
     |--------------------------------------------------------------------------
     | Database Connections
     |--------------------------------------------------------------------------
-    |
-    | Below are all of the database connections defined for your application.
-    | An example configuration is provided for each database system which
-    | is supported by Laravel. You're free to add / remove connections.
-    |
     */
 
     'connections' => [
@@ -113,17 +102,34 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | ERP SQL Server Connection (Read-only usage)
+        |--------------------------------------------------------------------------
+        | This connection is dedicated for reading master data (e.g. Geha_Data)
+        | from the legacy ERP database on SQL Server, while the app main DB stays
+        | on PostgreSQL (pgsql).
+        */
+        'erp_sqlsrv' => [
+        'driver' => 'sqlsrv',
+        'host' => env('DB_ERP_HOST', '127.0.0.1'),
+        'port' => env('DB_ERP_PORT', '1433'),
+        'database' => env('DB_ERP_DATABASE', ''),
+        'username' => env('DB_ERP_USERNAME', ''),
+        'password' => env('DB_ERP_PASSWORD', ''),
+        'charset' => env('DB_ERP_CHARSET', 'utf8'),
+        'prefix' => '',
+        'prefix_indexes' => true,
+        'encrypt' => env('DB_ERP_ENCRYPT', 'no'),
+        'trust_server_certificate' => env('DB_ERP_TRUST_SERVER_CERTIFICATE', 'true'),
+        'options' => extension_loaded('pdo_sqlsrv') ? array_filter([]) : [],
+    ],
     ],
 
     /*
     |--------------------------------------------------------------------------
     | Migration Repository Table
     |--------------------------------------------------------------------------
-    |
-    | This table keeps track of all the migrations that have already run for
-    | your application. Using this information, we can determine which of
-    | the migrations on disk haven't actually been run on the database.
-    |
     */
 
     'migrations' => [
@@ -135,11 +141,6 @@ return [
     |--------------------------------------------------------------------------
     | Redis Databases
     |--------------------------------------------------------------------------
-    |
-    | Redis is an open source, fast, and advanced key-value store that also
-    | provides a richer body of commands than a typical key-value system
-    | such as Memcached. You may define your connection settings here.
-    |
     */
 
     'redis' => [
