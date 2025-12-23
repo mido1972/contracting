@@ -14,7 +14,9 @@ return new class extends Migration
             $table->string('code', 50)->nullable()->unique();
             $table->string('name', 255);
 
-            $table->string('status', 20)->default('ACTIVE');
+            // الحالة - خليها lowercase عشان consistent مع شاشاتك الحالية
+            $table->string('status', 20)->default('active');
+
             $table->text('notes')->nullable();
 
             // ✅ ربط اختياري بمقايسة (مرحلة أولى)
