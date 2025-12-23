@@ -26,6 +26,33 @@ class ProjectResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    // ✅ Navigation (Arabic)
+    public static function getNavigationGroup(): ?string
+    {
+        return 'المقاولات';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'المشاريع';
+    }
+
+    public static function getPluralLabel(): string
+    {
+        return 'المشاريع';
+    }
+
+    public static function getModelLabel(): string
+    {
+        return 'مشروع';
+    }
+
+    // نخليه ثابت علشان الروابط ما تتغيرش
+    public static function getSlug(?\Filament\Panel $panel = null): string
+    {
+        return 'projects';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ProjectForm::configure($schema);

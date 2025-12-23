@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Projects\RelationManagers;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Illuminate\Database\Eloquent\Builder;
 
 class BoqItemsRelationManager extends RelationManager
@@ -13,8 +14,9 @@ class BoqItemsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        $currency = fn (): string => $this->getOwnerRecord()?->currencyCode() ?? 'SAR';
+
         return $table
-            // لتقليل الاستعلامات (N+1) بما إننا بنعرض علاقات
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['workItem', 'unit']))
             ->recordTitleAttribute('id')
             ->columns([
@@ -42,17 +44,17 @@ class BoqItemsRelationManager extends RelationManager
 
                 TextColumn::make('unit_price')
                     ->label('سعر الوحدة')
-                    ->numeric(decimalPlaces: 2)
+                    ->money($currency)
                     ->sortable()
                     ->alignEnd(),
 
                 TextColumn::make('total_price')
                     ->label('الإجمالي')
-                    ->numeric(decimalPlaces: 2)
+                    ->money($currency)
                     ->summarize([
-                        \Filament\Tables\Columns\Summarizers\Sum::make()
+                        Sum::make()
                             ->label('الإجمالي')
-                            ->numeric(decimalPlaces: 2),
+                            ->money($currency),
                     ])
                     ->sortable()
                     ->alignEnd(),
