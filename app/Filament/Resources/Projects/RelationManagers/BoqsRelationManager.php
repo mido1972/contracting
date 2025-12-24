@@ -2,12 +2,17 @@
 
 namespace App\Filament\Resources\Projects\RelationManagers;
 
+use App\Models\Project;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class BoqsRelationManager extends RelationManager
@@ -20,7 +25,7 @@ class BoqsRelationManager extends RelationManager
     protected static ?string $title = 'المقايسات';
 
     /**
-     * Filament v4: Schema (مش Forms\Form)
+     * Filament v4 uses Schema (NOT Forms\Form)
      */
     public function form(Schema $schema): Schema
     {
@@ -30,6 +35,7 @@ class BoqsRelationManager extends RelationManager
                     ->label('كود المقايسة')
                     ->maxLength(50)
                     ->helperText('اختياري (يمكن توليده لاحقًا)'),
+
 
                 TextInput::make('name')
                     ->label('اسم المقايسة')
@@ -64,41 +70,41 @@ class BoqsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('name')
             ->columns([
-                Tables\Columns\TextColumn::make('code')
+                TextColumn::make('code')
                     ->label('الكود')
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable()
                     ->wrap()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('total_amount')
+                TextColumn::make('total_amount')
                     ->label('الإجمالي')
                     ->money($currency)
                     ->alignEnd()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->label('آخر تعديل')
                     ->since()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('id', 'desc')
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->mutateFormDataUsing(function (array $data): array {
-                        /** @var \App\Models\Project $project */
+                        /** @var Project $project */
                         $project = $this->getOwnerRecord();
 
-                        // تثبيت الـ Context تلقائيًا
+                        // تثبيت الـ context تلقائيًا
                         $data['company_id'] = $project->company_id;
                         $data['branch_id']  = $project->branch_id;
                         $data['project_id'] = $project->id;
@@ -107,11 +113,11 @@ class BoqsRelationManager extends RelationManager
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                DeleteBulkAction::make(),
             ]);
     }
 }
