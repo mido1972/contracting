@@ -14,13 +14,31 @@ class EditBoq extends EditRecord
     protected static string $resource = BoqResource::class;
 
     /**
-     * ✅ Security: prevent editing BOQs outside current branch/company context.
-     * If someone tries /admin/boqs/{id}/edit for another branch → 404.
+     * ✅ Security:
+     * منع تعديل مقايسة خارج الفرع / الشركة الحالية
+     * أي محاولة وصول مباشر → 404
      */
     protected function getRecordQuery(): Builder
     {
         return parent::getRecordQuery()
             ->forCurrentContext();
+    }
+
+    /**
+     * ✅ تحسين UX:
+     * إظهار المشروع + الفرع أعلى الصفحة
+     */
+    protected function getHeaderSubheading(): ?string
+    {
+        $boq = $this->record;
+
+        return sprintf(
+            'المشروع: %s | الفرع: %s',
+            $boq->project?->name ?? '-',
+            $boq->branch?->name_ar
+                ?? $boq->branch?->name_en
+                ?? '-'
+        );
     }
 
     protected function getHeaderActions(): array
@@ -31,7 +49,9 @@ class EditBoq extends EditRecord
                 ->visible(fn () => (string) $this->record->status === 'DRAFT')
                 ->requiresConfirmation()
                 ->action(function () {
-                    $this->record->update(['status' => 'SUBMITTED']);
+                    $this->record->update([
+                        'status' => 'SUBMITTED',
+                    ]);
 
                     Notification::make()
                         ->title('تم إرسال المقايسة')
@@ -46,7 +66,9 @@ class EditBoq extends EditRecord
                 ->visible(fn () => (string) $this->record->status === 'SUBMITTED')
                 ->requiresConfirmation()
                 ->action(function () {
-                    $this->record->update(['status' => 'DRAFT']);
+                    $this->record->update([
+                        'status' => 'DRAFT',
+                    ]);
 
                     Notification::make()
                         ->title('تم إرجاع المقايسة لمسودة')
@@ -56,7 +78,8 @@ class EditBoq extends EditRecord
                     $this->refreshFormData(['status']);
                 }),
 
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->visible(fn () => (string) $this->record->status === 'DRAFT'),
         ];
     }
 }

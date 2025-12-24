@@ -18,7 +18,7 @@ class BoqForm
                 ->label('كود المقايسة')
                 ->helperText('اتركه فارغًا ليتم توليده تلقائيًا')
                 ->maxLength(50)
-                ->dehydrated(false),
+                ->nullable(),
 
             TextInput::make('name')
                 ->label('اسم المقايسة')
@@ -26,8 +26,10 @@ class BoqForm
                 ->maxLength(255),
 
             /**
-             * ✅ اختيار المشروع (FK حقيقي)
-             * مفلتر حسب الفرع / الشركة الحالية
+             * ✅ اختيار المشروع (FK)
+             * - عند الإنشاء: مطلوب
+             * - عند التعديل: مقفول (لمنع نقل مقايسة بين مشاريع بالخطأ)
+             * - لو جاي من داخل Project RelationManager: غالبًا هيتثبت تلقائيًا
              */
             Select::make('project_id')
                 ->label('المشروع')
@@ -43,7 +45,9 @@ class BoqForm
                     fn (Project $p) => "{$p->code} - {$p->name}"
                 )
                 ->placeholder('اختر المشروع')
-                ->required(),
+                ->required(fn ($record) => $record === null)     // required on create
+                ->disabled(fn ($record) => $record !== null)     // locked on edit
+                ->dehydrated(true),
 
             Select::make('status')
                 ->label('الحالة')
@@ -58,9 +62,11 @@ class BoqForm
 
             /**
              * ✅ إجمالي المقايسة (عرض فقط)
+             * يظهر في Edit فقط
              */
             Placeholder::make('total_amount_view')
                 ->label('إجمالي المقايسة')
+                ->visible(fn ($record) => $record !== null)
                 ->content(function ($record) {
                     $total = (float) ($record?->total_amount ?? 0);
                     $txt = number_format($total, 2);
