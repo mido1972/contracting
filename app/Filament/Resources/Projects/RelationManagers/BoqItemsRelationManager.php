@@ -10,16 +10,38 @@ use Illuminate\Database\Eloquent\Builder;
 
 class BoqItemsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'boqItems';
+    /**
+     * ✅ بدل boqItems (القديم المبني على project.boq_id)
+     * هنستخدم علاقة صحيحة: Project -> boqs -> boq_items
+     */
+    protected static string $relationship = 'boqItemsViaBoqs';
+
+    protected static ?string $title = 'بنود المقايسات';
 
     public function table(Table $table): Table
     {
         $currency = fn (): string => $this->getOwnerRecord()?->currencyCode() ?? config('app.currency_default', 'SAR');
 
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['workItem', 'unit']))
+            ->modifyQueryUsing(function (Builder $query) {
+                return $query->with([
+                    'boq:id,code,name',   // ✅ لإظهار اسم/كود المقايسة
+                    'workItem',
+                    'unit',
+                ]);
+            })
             ->recordTitleAttribute('id')
             ->columns([
+                TextColumn::make('boq.code')
+                    ->label('كود المقايسة')
+                    ->sortable()
+                    ->toggleable(),
+
+                TextColumn::make('boq.name')
+                    ->label('اسم المقايسة')
+                    ->wrap()
+                    ->toggleable(),
+
                 TextColumn::make('sort_order')
                     ->label('#')
                     ->sortable()
@@ -68,9 +90,9 @@ class BoqItemsRelationManager extends RelationManager
                     ->wrap()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('sort_order')
-            ->headerActions([])
-            ->recordActions([])
-            ->toolbarActions([]);
+            ->defaultSort('boq_id')
+            ->headerActions([])     // Read-only
+            ->recordActions([])     // Read-only
+            ->toolbarActions([]);   // Read-only
     }
 }

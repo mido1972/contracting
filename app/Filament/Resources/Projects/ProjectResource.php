@@ -7,6 +7,7 @@ use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Filament\Resources\Projects\Pages\ViewProject;
 use App\Filament\Resources\Projects\RelationManagers\BoqItemsRelationManager;
+use App\Filament\Resources\Projects\RelationManagers\BoqsRelationManager;
 use App\Filament\Resources\Projects\Schemas\ProjectForm;
 use App\Filament\Resources\Projects\Schemas\ProjectInfolist;
 use App\Filament\Resources\Projects\Tables\ProjectsTable;
@@ -27,7 +28,6 @@ class ProjectResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    // ✅ Navigation (Arabic)
     public static function getNavigationGroup(): ?string
     {
         return 'المقاولات';
@@ -48,7 +48,6 @@ class ProjectResource extends Resource
         return 'مشروع';
     }
 
-    // نخليه ثابت علشان الروابط ما تتغيرش
     public static function getSlug(?Panel $panel = null): string
     {
         return 'projects';
@@ -70,19 +69,20 @@ class ProjectResource extends Resource
     }
 
     /**
-     * ✅ أهم نقطة: فلترة المشاريع حسب الفرع/الشركة الحالية للمستخدم
+     * ✅ فلترة المشاريع حسب الفرع/الشركة الحالية للمستخدم
      */
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
             ->forCurrentContext()
-            ->with(['geha', 'boq']);
+            ->with(['geha']);
     }
 
     public static function getRelations(): array
     {
         return [
-            BoqItemsRelationManager::class,
+            BoqsRelationManager::class,     // ✅ المقايسات داخل المشروع
+            BoqItemsRelationManager::class, // ✅ بنود كل المقايسات داخل المشروع (Read-only)
         ];
     }
 

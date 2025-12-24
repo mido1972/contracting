@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Auth;
 
 class Project extends Model
@@ -21,11 +22,7 @@ class Project extends Model
         'geha_code',
         'status',
         'notes',
-        'boq_id',
-    ];
-
-    protected $casts = [
-        // 'geha_code' => 'integer', // اختياري
+        // 'boq_id', // ❌ هنوقف الاعتماد عليه (هنحذفه لاحقًا من DB)
     ];
 
     /*
@@ -44,27 +41,36 @@ class Project extends Model
         return $this->belongsTo(Branch::class, 'branch_id');
     }
 
-    public function boq(): BelongsTo
+    /**
+     * ✅ Project has many BOQs (preferred)
+     */
+    public function boqs(): HasMany
     {
-        return $this->belongsTo(Boq::class, 'boq_id');
+        return $this->hasMany(Boq::class, 'project_id');
+    }
+
+    /**
+     * ✅ Project has many BOQ items through BOQs
+     * This enables showing all BOQ items inside the Project page (read-only).
+     */
+    public function boqItemsViaBoqs(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            BoqItem::class, // final
+            Boq::class,     // through
+            'project_id',   // FK on boqs -> projects.id
+            'boq_id',       // FK on boq_items -> boqs.id
+            'id',           // local key on projects
+            'id'            // local key on boqs
+        );
     }
 
     /**
      * Read-only relation to ERP Geha_Data (SQL Server).
-     * Joins by geha_code -> Geha_Data.Geha_Code
      */
     public function geha(): BelongsTo
     {
         return $this->belongsTo(Geha::class, 'geha_code', 'Geha_Code');
-    }
-
-    /**
-     * Read-only: BOQ Items filtered by this project's boq_id
-     * (works even if there is no direct project_id on boq_items)
-     */
-    public function boqItems(): HasMany
-    {
-        return $this->hasMany(BoqItem::class, 'boq_id', 'boq_id');
     }
 
     /*
@@ -73,10 +79,6 @@ class Project extends Model
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Resolve currency with fallback:
-     * Project.branch → Project.company → app default
-     */
     public function currencyCode(): string
     {
         return $this->branch?->currencyCode()
@@ -86,7 +88,7 @@ class Project extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | Scopes (Multi-tenant / Context aware)
+    | Scopes
     |--------------------------------------------------------------------------
     */
 
@@ -100,18 +102,10 @@ class Project extends Model
         return $query->where('branch_id', $branchId);
     }
 
-    /**
-     * Filter projects by the authenticated user's current context:
-     * - current_branch_id (strongest)
-     * - current_company_id (fallback)
-     *
-     * @param  Builder<Project>  $query
-     */
     public function scopeForCurrentContext(Builder $query): Builder
     {
         $user = Auth::user();
 
-        // CLI / Seeder / unauthenticated
         if (! $user) {
             return $query;
         }
