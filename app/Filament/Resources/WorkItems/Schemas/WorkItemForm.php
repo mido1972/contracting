@@ -61,7 +61,7 @@ class WorkItemForm
 
         $next = self::nextSerialForCategory($categoryId);
 
-        return $prefix . '-' . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return $prefix . '-' . str_pad((string) $next, 6, '0', STR_PAD_LEFT);
     }
 
     public static function configure(Schema $schema): Schema
