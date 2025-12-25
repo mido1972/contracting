@@ -10,21 +10,26 @@ class WorkItemCategoryForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema->components([
-            TextInput::make('code')
-                ->label('الكود')
-                ->required()
-                ->maxLength(20)
-                ->unique(ignoreRecord: true),
+        return $schema
+            ->columns(2)
+            ->components([
+                TextInput::make('code')
+                    ->label('الكود')
+                    ->required()
+                    ->maxLength(20)
+                    ->unique(ignoreRecord: true)
+                    ->columnSpan(1),
 
-            TextInput::make('name')
-                ->label('اسم التصنيف')
-                ->required()
-                ->maxLength(255),
+                TextInput::make('name')
+                    ->label('اسم التصنيف')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpan(1),
 
-            Textarea::make('notes')
-                ->label('ملاحظات')
-                ->columnSpanFull(),
-        ]);
+                Textarea::make('notes')
+                    ->label('ملاحظات')
+                    ->rows(3)
+                    ->columnSpanFull(),
+            ]);
     }
 }

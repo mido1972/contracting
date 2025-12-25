@@ -24,7 +24,6 @@ class WorkItemCategoryResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    // التعريب
     public static function getNavigationLabel(): string
     {
         return 'تصنيفات بنود الأعمال';

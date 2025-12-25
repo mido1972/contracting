@@ -21,18 +21,26 @@ class WorkItemCategoriesTable
 
                 TextColumn::make('name')
                     ->label('اسم التصنيف')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ الإضافة')
-                    ->date(),
+                    ->date('Y-m-d')
+                    ->sortable(),
             ])
+
+            ->filters([])
+
             ->recordActions([
-                EditAction::make()->label('تعديل'),
+                EditAction::make()
+                    ->label('تعديل'),
             ])
+
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make()->label('حذف'),
+                    DeleteBulkAction::make()
+                        ->label('حذف'),
                 ]),
             ]);
     }

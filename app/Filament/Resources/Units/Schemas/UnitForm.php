@@ -11,17 +11,20 @@ class UnitForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(2)
             ->components([
                 TextInput::make('code')
                     ->label('الكود')
                     ->required()
                     ->maxLength(20)
-                    ->unique(ignoreRecord: true),
+                    ->unique(ignoreRecord: true)
+                    ->columnSpan(1),
 
                 TextInput::make('name')
                     ->label('الاسم')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->columnSpan(1),
 
                 Textarea::make('notes')
                     ->label('ملاحظات')

@@ -24,7 +24,6 @@ class WorkItemResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-    // تعريب
     public static function getNavigationLabel(): string
     {
         return 'بنود الأعمال';

@@ -16,7 +16,6 @@ use Filament\Tables\Table;
 
 class UnitResource extends Resource
 {
-    // ✅ لازم تفضل ?string (زي Filament\Resources\Resource)
     protected static ?string $model = Unit::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
@@ -25,7 +24,6 @@ class UnitResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    // ✅ التعريب بالدوال (مستقر ومفيهوش مشاكل Types)
     public static function getNavigationLabel(): string
     {
         return 'الوحدات';
@@ -58,17 +56,15 @@ class UnitResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => ListUnits::route('/'),
+            'index'  => ListUnits::route('/'),
             'create' => CreateUnit::route('/create'),
-            'edit' => EditUnit::route('/{record}/edit'),
+            'edit'   => EditUnit::route('/{record}/edit'),
         ];
     }
 }
