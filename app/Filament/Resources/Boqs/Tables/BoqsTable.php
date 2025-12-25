@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\Boqs\Tables;
 
-use App\Models\Boq;
-use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -42,12 +41,25 @@ class BoqsTable
                     ->sortable(),
             ])
             ->recordActions([
+                // 🖨️ Print
                 Action::make('print')
                     ->label('طباعة')
                     ->icon('heroicon-o-printer')
-                    ->url(fn (Boq $record): string => route('reports.boq.print', $record))
-                    ->openUrlInNewTab(),
+                    ->url(fn ($record) => route('reports.boq.print', ['boq' => $record->id]), true),
 
+                // 📄 PDF
+                Action::make('pdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->url(fn ($record) => route('reports.boq.pdf', ['boq' => $record->id]), true),
+
+                // 📊 Excel
+                Action::make('excel')
+                    ->label('Excel')
+                    ->icon('heroicon-o-table-cells')
+                    ->url(fn ($record) => route('reports.boq.excel', ['boq' => $record->id]), true),
+
+                // ✏️ Edit
                 EditAction::make()->label('تعديل'),
             ])
             ->toolbarActions([

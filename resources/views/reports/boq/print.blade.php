@@ -2,15 +2,22 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>طباعة مقايسة - {{ $boq->code ?? $boq->id }}</title>
 
-    {{-- Cairo (for browser print). For PDF, dompdf may not load remote fonts; we fallback to DejaVu --}}
+    {{-- Cairo (browser). For PDF (dompdf) remote fonts may not load; fallback stays --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        @page { size: A4; margin: 12mm 10mm; }
+        /* =========================
+           A4 PAGE SETUP (Print)
+           ========================= */
+        @page {
+            size: A4;
+            margin: 12mm 10mm 14mm 10mm; /* bottom أكبر عشان الفوتر */
+        }
 
         :root{
             --border:#2b2b2b;
@@ -18,14 +25,52 @@
             --bg:#f3f5f7;
         }
 
+        * { box-sizing: border-box; }
+
+        html, body{
+            height: 100%;
+        }
+
         body{
-            font-family: "Cairo", "DejaVu Sans", sans-serif;
+            font-family: "Cairo", "DejaVu Sans", Arial, sans-serif;
             font-size: 12px;
             color: #111;
             margin: 0;
+            background: #fff;
         }
 
-        .container{ width: 100%; }
+        /* =========================
+           Screen Preview (helps you see A4)
+           ========================= */
+        .page{
+            width: 210mm;
+            min-height: 297mm;
+            margin: 10mm auto;
+            padding: 0; /* margins handled by @page on print */
+            background: #fff;
+        }
+
+        /* toolbar on screen only */
+        .toolbar{
+            width: 210mm;
+            margin: 10mm auto 0 auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .btn{
+            border: 1px solid #ddd;
+            background: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        .btn:hover{ background: #f7f7f7; }
+
+        .container{ width: 100%; padding: 0 0; }
 
         .header{
             display: flex;
@@ -53,17 +98,22 @@
         .kv b{ font-weight: 700; }
         .muted{ color: var(--muted); }
 
+        /* =========================
+           TABLE
+           ========================= */
         table{
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
             border: 1px solid var(--border);
+            table-layout: fixed; /* مهم: يمنع الجدول يمد برّه */
         }
 
         th, td{
             border: 1px solid var(--border);
             padding: 6px 6px;
             vertical-align: top;
+            word-wrap: break-word;
         }
 
         thead th{
@@ -72,9 +122,21 @@
             text-align: center;
         }
 
-        td.num{ text-align: left; direction: ltr; white-space: nowrap; }
+        /* تكرار الهيدر عند الطباعة */
+        thead { display: table-header-group; }
+        tfoot { display: table-footer-group; }
+
+        td.num{
+            text-align: left;      /* لأننا RTL */
+            direction: ltr;
+            white-space: nowrap;   /* الأرقام ما تتكسرش */
+        }
+
         td.center{ text-align: center; }
         td.wrap{ white-space: normal; }
+
+        /* منع تكسير الصف داخل الصفحة قدر الإمكان */
+        tr{ page-break-inside: avoid; }
 
         .totals{
             margin-top: 10px;
@@ -106,6 +168,9 @@
             font-size: 13px;
         }
 
+        /* =========================
+           FOOTER (print)
+           ========================= */
         .footer{
             position: fixed;
             bottom: 8mm;
@@ -118,94 +183,104 @@
             align-items: center;
         }
 
-        .page:after{
-            content: counter(page);
-        }
-
         .pages:after{
             content: counter(page) " / " counter(pages);
         }
 
-        /* Print improvements */
+        /* =========================
+           PRINT MODE
+           ========================= */
         @media print {
+            .toolbar { display: none !important; }
+            .page { width: auto; min-height: auto; margin: 0; }
             a { color: inherit; text-decoration: none; }
         }
     </style>
 </head>
 
 <body>
-<div class="container">
 
-    <div class="header">
-        <div class="block">
-            <p class="title">مقايسة أعمال</p>
-            <p class="kv"><b>رقم المقايسة:</b> {{ $boq->code ?? $boq->id }}</p>
-            <p class="kv"><b>اسم المقايسة:</b> {{ $boq->name ?? '-' }}</p>
-            <p class="kv"><b>الحالة:</b> {{ $boq->status ?? '-' }}</p>
+{{-- Toolbar (screen only) --}}
+<div class="toolbar">
+    <button class="btn" onclick="window.print()">🖨️ طباعة</button>
+</div>
+
+<div class="page">
+    <div class="container">
+
+        <div class="header">
+            <div class="block">
+                <p class="title">مقايسة أعمال</p>
+                <p class="kv"><b>رقم المقايسة:</b> {{ $boq->code ?? $boq->id }}</p>
+                <p class="kv"><b>اسم المقايسة:</b> {{ $boq->name ?? '-' }}</p>
+                <p class="kv"><b>الحالة:</b> {{ $boq->status ?? '-' }}</p>
+            </div>
+
+            <div class="block">
+                <p class="kv"><b>الشركة:</b> {{ $boq->company?->name_ar ?? $boq->company?->name_en ?? '-' }}</p>
+                <p class="kv"><b>الفرع:</b> {{ $boq->branch?->name_ar ?? $boq->branch?->name_en ?? '-' }}</p>
+                <p class="kv"><b>المشروع:</b> {{ $boq->project?->name ?? '-' }}</p>
+                <p class="kv muted"><b>تاريخ الطباعة:</b> {{ $printed_at?->format('Y-m-d H:i') }}</p>
+            </div>
         </div>
 
-        <div class="block">
-            <p class="kv"><b>الشركة:</b> {{ $boq->company?->name_ar ?? $boq->company?->name_en ?? '-' }}</p>
-            <p class="kv"><b>الفرع:</b> {{ $boq->branch?->name_ar ?? $boq->branch?->name_en ?? '-' }}</p>
-            <p class="kv"><b>المشروع:</b> {{ $boq->project?->name ?? '-' }}</p>
-            <p class="kv muted"><b>تاريخ الطباعة:</b> {{ $printed_at?->format('Y-m-d H:i') }}</p>
-        </div>
-    </div>
-
-    <table>
-        <thead>
-        <tr>
-            <th style="width:44px;">م</th>
-            <th>البند</th>
-            <th style="width:70px;">الوحدة</th>
-            <th style="width:80px;">الكمية</th>
-            <th style="width:95px;">سعر الوحدة</th>
-            <th style="width:110px;">الإجمالي</th>
-            <th style="width:160px;">ملاحظات</th>
-        </tr>
-        </thead>
-        <tbody>
-        @forelse($items as $i => $it)
+        <table>
+            <thead>
             <tr>
-                <td class="center">{{ $it->sort_order ?? ($i+1) }}</td>
-                <td class="wrap">{{ $it->workItem?->name ?? '-' }}</td>
-                <td class="center">{{ $it->unit?->name ?? '-' }}</td>
-                <td class="num">{{ number_format((float) $it->quantity, 3) }}</td>
-                <td class="num">{{ number_format((float) $it->unit_price, 2) }}</td>
-                <td class="num">{{ number_format((float) $it->total_price, 2) }}</td>
-                <td class="wrap">{{ $it->notes ?? '' }}</td>
+                <th style="width:44px;">م</th>
+                <th>البند</th>
+                <th style="width:70px;">الوحدة</th>
+                <th style="width:80px;">الكمية</th>
+                <th style="width:95px;">سعر الوحدة</th>
+                <th style="width:110px;">الإجمالي</th>
+                <th style="width:160px;">ملاحظات</th>
             </tr>
-        @empty
-            <tr>
-                <td colspan="7" class="center muted">لا توجد بنود</td>
-            </tr>
-        @endforelse
-        </tbody>
-    </table>
+            </thead>
 
-    <div class="totals">
-        <div class="totals-row">
-            <div class="label">الإجمالي ({{ $currency }})</div>
-            <div class="value">{{ number_format((float) $total_amount, 2) }}</div>
+            <tbody>
+            @forelse($items as $i => $it)
+                <tr>
+                    <td class="center">{{ $it->sort_order ?? ($i + 1) }}</td>
+                    <td class="wrap">{{ $it->workItem?->name ?? '-' }}</td>
+                    <td class="center">{{ $it->unit?->name ?? '-' }}</td>
+                    <td class="num">{{ number_format((float) $it->quantity, 3) }}</td>
+                    <td class="num">{{ number_format((float) $it->unit_price, 2) }}</td>
+                    <td class="num">{{ number_format((float) $it->total_price, 2) }}</td>
+                    <td class="wrap">{{ $it->notes ?? '' }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="7" class="center muted">لا توجد بنود</td>
+                </tr>
+            @endforelse
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <div class="totals-row">
+                <div class="label">الإجمالي ({{ $currency }})</div>
+                <div class="value">{{ number_format((float) $total_amount, 2) }}</div>
+            </div>
+            <div class="totals-row muted">
+                <div class="label">إجمالي البنود (حسابيًا)</div>
+                <div class="value">{{ number_format((float) $subtotal, 2) }}</div>
+            </div>
         </div>
-        <div class="totals-row muted">
-            <div class="label">إجمالي البنود (حسابيًا)</div>
-            <div class="value">{{ number_format((float) $subtotal, 2) }}</div>
-        </div>
+
+        @if(!empty($boq->notes))
+            <div class="notes">
+                <h4>ملاحظات</h4>
+                <div class="wrap">{{ $boq->notes }}</div>
+            </div>
+        @endif
+
     </div>
-
-    @if(!empty($boq->notes))
-        <div class="notes">
-            <h4>ملاحظات</h4>
-            <div class="wrap">{{ $boq->notes }}</div>
-        </div>
-    @endif
-
 </div>
 
 <div class="footer">
     <div>BOQ Report</div>
     <div>صفحة <span class="pages"></span></div>
 </div>
+
 </body>
 </html>
