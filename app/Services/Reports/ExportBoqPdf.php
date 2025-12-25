@@ -2,7 +2,7 @@
 
 namespace App\Services\Reports;
 
-use Barryvdh\DomPDF\Facade\Pdf;
+use Barryvdh\Snappy\Facades\SnappyPdf;
 use Illuminate\Http\Response;
 
 class ExportBoqPdf
@@ -14,28 +14,32 @@ class ExportBoqPdf
     public function handle(int $boqId): Response
     {
         $data = $this->report->build($boqId);
-
-        // Flag to let the Blade know this is PDF mode (hide buttons, tweak layout if needed)
         $data['isPdf'] = true;
-
-        $pdf = Pdf::loadView('reports.boq.print', $data)
-            ->setPaper('a4', 'portrait')
-            ->setOptions([
-                // Arabic-friendly font
-                'defaultFont' => 'DejaVu Sans',
-
-                // Better CSS/HTML parsing
-                'isHtml5ParserEnabled' => true,
-
-                // Allow remote assets if you use e.g. images/fonts via url()
-                'isRemoteEnabled' => true,
-
-                // Rendering quality
-                'dpi' => 96,
-            ]);
 
         $filename = 'BOQ-' . ($data['boq']->code ?? $data['boq']->id) . '.pdf';
 
-        return $pdf->download($filename);
+        $pdf = SnappyPdf::loadView('reports.boq.print', $data)
+            ->setOption('encoding', 'utf-8')
+            ->setOption('page-size', 'A4')
+            ->setOption('margin-top', '10mm')
+            ->setOption('margin-right', '10mm')
+            ->setOption('margin-bottom', '15mm')
+            ->setOption('margin-left', '10mm')
+
+            // allow local fonts/images via file:///
+            ->setOption('enable-local-file-access', true)
+
+            // use print css
+            ->setOption('print-media-type', true)
+
+            // rendering stability
+            ->setOption('disable-smart-shrinking', true)
+            ->setOption('load-error-handling', 'ignore')
+            ->setOption('load-media-error-handling', 'ignore');
+
+        return response($pdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
     }
 }

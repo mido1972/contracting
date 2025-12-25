@@ -7,25 +7,25 @@
 
     <style>
         /* =========================
-           EMBED LOCAL FONTS (Works in Browser + DomPDF)
+           EMBED LOCAL FONTS (wkhtmltopdf needs file:///)
            ========================= */
         @font-face{
             font-family: "CairoLocal";
             font-style: normal;
             font-weight: 400;
-            src: url("{{ public_path('fonts/cairo/Cairo-Regular.ttf') }}") format("truetype");
+            src: url("file:///{{ str_replace('\\', '/', public_path('fonts/cairo/Cairo-Regular.ttf')) }}") format("truetype");
         }
         @font-face{
             font-family: "CairoLocal";
             font-style: normal;
             font-weight: 600;
-            src: url("{{ public_path('fonts/cairo/Cairo-SemiBold.ttf') }}") format("truetype");
+            src: url("file:///{{ str_replace('\\', '/', public_path('fonts/cairo/Cairo-SemiBold.ttf')) }}") format("truetype");
         }
         @font-face{
             font-family: "CairoLocal";
             font-style: normal;
             font-weight: 700;
-            src: url("{{ public_path('fonts/cairo/Cairo-Bold.ttf') }}") format("truetype");
+            src: url("file:///{{ str_replace('\\', '/', public_path('fonts/cairo/Cairo-Bold.ttf')) }}") format("truetype");
         }
 
         /* =========================
@@ -45,7 +45,7 @@
         * { box-sizing: border-box; }
 
         body{
-            font-family: "CairoLocal", "DejaVu Sans", Arial, sans-serif;
+            font-family: "CairoLocal", Arial, sans-serif;
             font-size: 12px;
             color: #111;
             margin: 0;
@@ -79,7 +79,7 @@
         }
         .btn:hover{ background: #f7f7f7; }
 
-        .container{ width: 100%; padding: 0 0; }
+        .container{ width: 100%; padding: 0; }
 
         .header{
             display: flex;
@@ -93,6 +93,7 @@
         }
 
         .header .block{ width: 50%; }
+
         .title{
             font-size: 16px;
             font-weight: 700;
@@ -113,7 +114,7 @@
 
         th, td{
             border: 1px solid var(--border);
-            padding: 6px 6px;
+            padding: 6px;
             vertical-align: top;
             word-wrap: break-word;
         }
@@ -125,7 +126,6 @@
         }
 
         thead { display: table-header-group; }
-        tfoot { display: table-footer-group; }
 
         td.num{
             text-align: left;
@@ -180,8 +180,10 @@
             align-items: center;
         }
 
+        /* wkhtmltopdf لا يدعم counter(page) بنفس طريقة CSS،
+           هنسيبها نص ثابت، ولو احتجنا أرقام صفحات نعملها بـ header/footer options */
         .pages:after{
-            content: counter(page) " / " counter(pages);
+            content: "";
         }
 
         @media print {
@@ -275,7 +277,7 @@
 
 <div class="footer">
     <div>BOQ Report</div>
-    <div>صفحة <span class="pages"></span></div>
+    <div>صفحة</div>
 </div>
 
 </body>
