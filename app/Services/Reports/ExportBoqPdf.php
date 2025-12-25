@@ -2,8 +2,10 @@
 
 namespace App\Services\Reports;
 
-use Illuminate\Support\Facades\Cache;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Spatie\Browsershot\Browsershot;
 
 class ExportBoqPdf
@@ -12,6 +14,9 @@ class ExportBoqPdf
         private readonly BoqReport $report
     ) {}
 
+    /**
+     * Generate PDF to cache and return full path.
+     */
     public function generateToCache(int $boqId): string
     {
         @set_time_limit(300);
@@ -25,67 +30,107 @@ class ExportBoqPdf
 
         $pdfPath = $dir . DIRECTORY_SEPARATOR . "boq_{$boqId}.pdf";
 
-        // ✅ خطوط Cairo (مرة واحدة فقط)
-        $fontCss = Cache::rememberForever('cairo_font_css_v1', function () {
-            $regularPath = public_path('fonts/cairo/Cairo-Regular.ttf');
-            $boldPath    = public_path('fonts/cairo/Cairo-Bold.ttf');
-
-            if (! File::exists($regularPath)) {
-                return '/* Cairo Regular font missing */';
-            }
-
-            $regularB64 = base64_encode(File::get($regularPath));
-            $boldB64    = File::exists($boldPath) ? base64_encode(File::get($boldPath)) : null;
-
-            $css = "@font-face{font-family:\"Cairo\";src:url(\"data:font/ttf;base64,{$regularB64}\") format(\"truetype\");font-weight:400;font-style:normal;}";
-            if ($boldB64) {
-                $css .= "@font-face{font-family:\"Cairo\";src:url(\"data:font/ttf;base64,{$boldB64}\") format(\"truetype\");font-weight:700;font-style:normal;}";
-            }
-            $css .= "html,body{font-family:\"Cairo\", Arial, \"DejaVu Sans\", sans-serif !important;}";
-
-            return $css;
-        });
-
+        // Render HTML once (print view already optimized)
         $html = view('reports.boq.print', $data + ['isPdf' => 1])->render();
-        $html = $this->injectCssIntoHead($html, $fontCss);
 
-        $args = [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--no-first-run',
-            '--no-default-browser-check',
-            '--disable-extensions',
-            '--disable-sync',
-            '--disable-translate',
-            '--disable-background-networking',
-            '--disable-background-timer-throttling',
-            '--disable-renderer-backgrounding',
-        ];
+        // 1) Try Browsershot if available (optional)
+        if ($this->canUseBrowsershot()) {
+            try {
+                $args = [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--no-default-browser-check',
+                    '--disable-extensions',
+                    '--disable-sync',
+                    '--disable-translate',
+                    '--disable-background-networking',
+                    '--disable-background-timer-throttling',
+                    '--disable-renderer-backgrounding',
+                ];
 
-        Browsershot::html($html)
-            ->format('A4')
-            ->margins(0, 0, 0, 0)
-            ->emulateMedia('print')
-            ->showBackground()
-            ->setOption('waitUntil', 'load')
-            ->timeout(300)
-            ->setOption('protocolTimeout', 300000)
-            ->setOption('args', $args)
-            ->setOption('printBackground', true)
-            ->setOption('preferCSSPageSize', true)
-            ->savePdf($pdfPath);
+                Browsershot::html($html)
+                    ->format('A4')
+                    ->margins(0, 0, 0, 0)
+                    ->emulateMedia('print')
+                    ->showBackground()
+                    ->setOption('waitUntil', 'load')
+                    ->timeout(300)
+                    ->setOption('protocolTimeout', 300000)
+                    ->setOption('args', $args)
+                    ->setOption('printBackground', true)
+                    ->setOption('preferCSSPageSize', true)
+                    ->savePdf($pdfPath);
+
+                if (File::exists($pdfPath) && File::size($pdfPath) > 1024) {
+                    return $pdfPath;
+                }
+            } catch (\Throwable $e) {
+                // fallback to Dompdf below
+            }
+        }
+
+        // 2) Fallback: Dompdf (stable)
+        $this->renderWithDompdf($html, $pdfPath);
 
         return $pdfPath;
     }
 
-    private function injectCssIntoHead(string $html, string $css): string
+    /**
+     * Generate if missing then download response.
+     */
+    public function download(int $boqId)
     {
-        $styleTag = "<style>{$css}</style>";
-        if (stripos($html, '</head>') !== false) {
-            return preg_replace('/<\/head>/i', $styleTag . '</head>', $html, 1);
+        $path = storage_path("app/pdf-cache/boqs/boq_{$boqId}.pdf");
+
+        if (! File::exists($path) || File::size($path) < 1024) {
+            $path = $this->generateToCache($boqId);
         }
-        return $styleTag . $html;
+
+        if (! File::exists($path)) {
+            abort(500, 'PDF generation failed.');
+        }
+
+        $data = $this->report->build($boqId);
+        $boq = $data['boq'];
+
+        $filename = 'BOQ-' . ($boq->code ?? $boq->id) . '.pdf';
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    private function renderWithDompdf(string $html, string $pdfPath): void
+    {
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+
+        $dompdf = new Dompdf($options);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->render();
+
+        File::put($pdfPath, $dompdf->output());
+    }
+
+    /**
+     * Browsershot needs Node + Chromium/Puppeteer.
+     * If not available, we skip it entirely.
+     */
+    private function canUseBrowsershot(): bool
+    {
+        // simple environment guards (don’t crash)
+        // If node is not installed OR puppeteer/chrome missing, Browsershot will throw.
+        // We just allow try/catch but this reduces noisy failures.
+        $node = trim((string) @shell_exec('node -v 2>NUL'));
+        if ($node === '') {
+            $node = trim((string) @shell_exec('node -v 2>/dev/null'));
+        }
+        return Str::startsWith($node, 'v');
     }
 }

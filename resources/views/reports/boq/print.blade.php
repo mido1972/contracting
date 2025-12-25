@@ -20,16 +20,16 @@
 *{ box-sizing:border-box; }
 
 /* =========================
-   FONTS (LOCAL ONLY)
+   FONTS (Screen: asset) (PDF: public_path)
    ========================= */
 @font-face{
     font-family: "Cairo";
-    src: url('{{ public_path("fonts/cairo/Cairo-Regular.ttf") }}') format("truetype");
+    src: url('{{ $isPdfMode ? public_path("fonts/cairo/Cairo-Regular.ttf") : asset("fonts/cairo/Cairo-Regular.ttf") }}') format("truetype");
     font-weight: 400;
 }
 @font-face{
     font-family: "Cairo";
-    src: url('{{ public_path("fonts/cairo/Cairo-Bold.ttf") }}') format("truetype");
+    src: url('{{ $isPdfMode ? public_path("fonts/cairo/Cairo-Bold.ttf") : asset("fonts/cairo/Cairo-Bold.ttf") }}') format("truetype");
     font-weight: 700;
 }
 
@@ -40,6 +40,7 @@ html, body{
     font-size:12px;
     font-family:"Cairo","DejaVu Sans",Arial,sans-serif;
     direction:rtl;
+    unicode-bidi:embed;
 }
 
 /* =========================
@@ -58,17 +59,28 @@ html, body{
     border:1px solid #000;
 }
 
+@media screen{
+    .sheet{
+        box-shadow: 0 6px 24px rgba(0,0,0,.12);
+        border-radius: 6px;
+        border-color:#ddd;
+    }
+}
+
 @media print{
     body{ background:#fff; }
     .sheet{
         margin:0;
         border:none;
+        border-radius:0;
+        box-shadow:none;
     }
 }
 
 /* Numbers */
 .num{
-    direction:ltr;
+    direction:ltr !important;
+    unicode-bidi:isolate !important;
     text-align:left;
     white-space:nowrap;
 }
@@ -97,6 +109,7 @@ html, body{
     padding:10px;
     margin-bottom:10px;
     display:flex;
+    justify-content:space-between;
     gap:10px;
 }
 .header .block{ width:50%; }
@@ -120,6 +133,8 @@ th, td{
     border:1px solid #000;
     padding:6px;
     vertical-align:top;
+    word-wrap:break-word;
+    overflow-wrap:break-word;
 }
 thead th{
     background:#eee;
@@ -178,10 +193,10 @@ tr{ page-break-inside:avoid; }
         </div>
 
         <div class="block">
-            <p class="kv"><b>الشركة:</b> {{ $boq->company?->name ?? '-' }}</p>
-            <p class="kv"><b>الفرع:</b> {{ $boq->branch?->name ?? '-' }}</p>
+            <p class="kv"><b>الشركة:</b> {{ $boq->company?->name_ar ?? $boq->company?->name_en ?? '-' }}</p>
+            <p class="kv"><b>الفرع:</b> {{ $boq->branch?->name_ar ?? $boq->branch?->name_en ?? '-' }}</p>
             <p class="kv"><b>المشروع:</b> {{ $boq->project?->name ?? '-' }}</p>
-            <p class="kv muted"><b>تاريخ الطباعة:</b> {{ $printed_at->format('Y-m-d H:i') }}</p>
+            <p class="kv muted"><b>تاريخ الطباعة:</b> {{ optional($printed_at)->format('Y-m-d H:i') }}</p>
         </div>
     </div>
 
@@ -197,6 +212,7 @@ tr{ page-break-inside:avoid; }
             <th style="width:150px;">ملاحظات</th>
         </tr>
         </thead>
+
         <tbody>
         @forelse($items as $i => $it)
             <tr>

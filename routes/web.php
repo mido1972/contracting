@@ -6,7 +6,7 @@ use App\Http\Controllers\Filament\BranchSwitchController;
 use App\Models\Boq;
 use App\Exports\BoqItemsExport;
 use App\Services\Reports\BoqReport;
-use App\Jobs\GenerateBoqPdfJob;
+use App\Services\Reports\ExportBoqPdf;
 use Maatwebsite\Excel\Facades\Excel;
 
 /*
@@ -43,7 +43,6 @@ Route::middleware(['web', 'auth'])
         */
         $enforceBoqContext = function ($boq): Boq {
 
-            /** @var \App\Models\User|null $user */
             $user = request()->user();
             abort_if(! $user, 403);
 
@@ -85,28 +84,14 @@ Route::middleware(['web', 'auth'])
 
             /*
             |--------------------------------------------------------------------------
-            | PDF (SYNC) — Generate (if missing) then Download
+            | PDF (SYNC) — Generate + Download
             |--------------------------------------------------------------------------
             */
             Route::get('{boq}/pdf/download', function ($boq) use ($enforceBoqContext) {
 
                 $boq = $enforceBoqContext($boq);
 
-                $path = storage_path("app/pdf-cache/boqs/boq_{$boq->id}.pdf");
-
-                if (! file_exists($path)) {
-                    dispatch_sync(new GenerateBoqPdfJob($boq->id));
-                }
-
-                if (! file_exists($path)) {
-                    abort(500, 'PDF generation failed.');
-                }
-
-                $filename = 'BOQ-' . ($boq->code ?? $boq->id) . '.pdf';
-
-                return response()->download($path, $filename, [
-                    'Content-Type' => 'application/pdf',
-                ]);
+                return app(ExportBoqPdf::class)->download($boq->id);
             })
                 ->whereNumber('boq')
                 ->name('reports.boq.pdf.download');

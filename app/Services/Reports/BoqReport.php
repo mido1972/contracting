@@ -47,25 +47,11 @@ class BoqReport
         $boq = Boq::query()
             ->select($columns)
             ->with([
-                'company:id,name',
-                'branch:id,name',
-                'project:id,name',
+                'company',
+                'branch',
+                'project',
                 'items' => function ($q) {
-                    $q->select([
-                            'id',
-                            'boq_id',
-                            'work_item_id',
-                            'unit_id',
-                            'quantity',
-                            'unit_price',
-                            'total_price',
-                            'sort_order',
-                            'notes',
-                        ])
-                        ->with([
-                            'workItem:id,code,name',
-                            'unit:id,name',
-                        ])
+                    $q->with(['workItem', 'unit'])
                         ->orderBy('sort_order')
                         ->orderBy('id');
                 },
@@ -76,7 +62,11 @@ class BoqReport
 
         $subtotal = (float) $items->sum('total_price');
 
-        $totalAmount = (float) (filled($boq->total_amount) ? $boq->total_amount : $subtotal);
+        $totalAmount = (float) (
+            filled($boq->total_amount)
+                ? $boq->total_amount
+                : $subtotal
+        );
 
         $currency = 'SAR';
         if ($this->hasCurrencyCodeColumn() && filled($boq->currency_code)) {
