@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Boqs\Tables;
 
+use App\Models\Boq;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -40,6 +42,12 @@ class BoqsTable
                     ->sortable(),
             ])
             ->recordActions([
+                Action::make('print')
+                    ->label('طباعة')
+                    ->icon('heroicon-o-printer')
+                    ->url(fn (Boq $record): string => route('reports.boq.print', $record))
+                    ->openUrlInNewTab(),
+
                 EditAction::make()->label('تعديل'),
             ])
             ->toolbarActions([
