@@ -10,17 +10,17 @@
 
 <style>
 /* =========================
-   A4 SETUP
+   PAGE SETUP (A4)
    ========================= */
 @page{
     size: A4;
-    margin: 12mm 10mm 14mm 10mm;
+    margin: 0; /* هنخلي الهوامش داخل الورقة نفسها */
 }
 
 *{ box-sizing:border-box; }
 
 /* =========================
-   FONTS (HTTP only - safe for Browsershot/Chromium)
+   FONTS (HTTP only)
    ========================= */
 @font-face{
     font-family: "Cairo";
@@ -38,12 +38,47 @@
 html, body{
     margin:0;
     padding:0;
-    background:#fff;
     color:#111;
     font-size:12px;
     font-family: "Cairo", Arial, "DejaVu Sans", sans-serif;
     direction:rtl;
     unicode-bidi:embed;
+}
+
+/* ✅ على الشاشة: خلفية رمادي + ورقة A4 في النص */
+@media screen{
+    body{ background:#f2f2f2; }
+}
+
+/* ✅ الورقة نفسها */
+.sheet{
+    width: 210mm;
+    min-height: 297mm;
+    background:#fff;
+
+    /* الهوامش المطلوبة داخل الورقة */
+    padding: 12mm 10mm 14mm 10mm;
+
+    margin: 10mm auto;
+    border: 1px solid #ddd;
+}
+
+@media screen{
+    .sheet{
+        box-shadow: 0 6px 24px rgba(0,0,0,.12);
+        border-radius: 6px;
+    }
+}
+
+/* ✅ عند الطباعة/PDF: بدون shadow أو radius */
+@media print{
+    body{ background:#fff; }
+    .sheet{
+        margin:0;
+        border:none;
+        border-radius:0;
+        box-shadow:none;
+    }
 }
 
 /* Numbers */
@@ -54,20 +89,13 @@ html, body{
     white-space:nowrap;
 }
 
-/* =========================
-   LAYOUT
-   ========================= */
-.page{
-    width:100%;
-}
-
+/* Toolbar */
 .toolbar{
     width:210mm;
     margin:10mm auto 0;
     display:flex;
     justify-content:flex-end;
 }
-
 .btn{
     padding:8px 12px;
     border:1px solid #ccc;
@@ -75,7 +103,11 @@ html, body{
     cursor:pointer;
     font-size:12px;
 }
+@media print{ .toolbar{ display:none; } }
 
+/* =========================
+   HEADER
+   ========================= */
 .header{
     border:1px solid #000;
     padding:10px;
@@ -84,20 +116,13 @@ html, body{
     justify-content:space-between;
     gap:10px;
 }
-
 .header .block{ width:50%; }
-
 .title{
     font-size:16px;
     font-weight:700;
     margin-bottom:6px;
 }
-
-.kv{
-    margin:0;
-    line-height:1.6;
-}
-
+.kv{ margin:0; line-height:1.6; }
 .muted{ color:#666; }
 
 /* =========================
@@ -106,9 +131,8 @@ html, body{
 table{
     width:100%;
     border-collapse:collapse;
-    table-layout:fixed; /* مهم لتثبيت الأعمدة وسرعة الـ PDF */
+    table-layout:fixed;
 }
-
 th, td{
     border:1px solid #000;
     padding:6px;
@@ -116,37 +140,29 @@ th, td{
     word-wrap:break-word;
     overflow-wrap:break-word;
 }
-
 thead th{
     background:#eee;
     text-align:center;
     font-weight:700;
 }
-
 thead{ display:table-header-group; }
 tr{ page-break-inside:avoid; }
-
 .center{ text-align:center; }
 
 /* =========================
-   TOTALS
+   TOTALS / NOTES
    ========================= */
 .totals{
     margin-top:10px;
     border:1px solid #000;
     padding:10px;
 }
-
 .totals-row{
     display:flex;
     justify-content:space-between;
     line-height:1.8;
     font-weight:700;
 }
-
-/* =========================
-   NOTES
-   ========================= */
 .notes{
     margin-top:10px;
     border:1px solid #000;
@@ -154,21 +170,11 @@ tr{ page-break-inside:avoid; }
 }
 
 /* =========================
-   PDF PERFORMANCE (Browsershot)
+   PDF PERFORMANCE
    ========================= */
 @if($isPdfMode)
-*{
-    animation:none !important;
-    transition:none !important;
-}
+*{ animation:none !important; transition:none !important; }
 @endif
-
-/* =========================
-   PRINT
-   ========================= */
-@media print{
-    .toolbar{ display:none; }
-}
 </style>
 </head>
 
@@ -180,7 +186,7 @@ tr{ page-break-inside:avoid; }
 </div>
 @endif
 
-<div class="page">
+<div class="sheet">
 
     <div class="header">
         <div class="block">

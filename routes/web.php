@@ -6,8 +6,16 @@ use App\Http\Controllers\Filament\BranchSwitchController;
 use App\Models\Boq;
 use App\Exports\BoqItemsExport;
 use App\Services\Reports\BoqReport;
-use App\Services\Reports\ExportBoqPdf;
 use Maatwebsite\Excel\Facades\Excel;
+
+/*
+|--------------------------------------------------------------------------
+| Root Route (مهم جدًا لتفادي 404 والبطء العام)
+|--------------------------------------------------------------------------
+*/
+Route::get('/', function () {
+    return redirect('/admin');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -32,36 +40,24 @@ Route::middleware(['web', 'auth'])
         | Tenant Context Guard (Reusable)
         |--------------------------------------------------------------------------
         */
-        $enforceBoqContext = function ($boq): void {
+        $enforceBoqContext = function ($boq): Boq {
 
             /** @var \App\Models\User|null $user */
             $user = request()->user();
+            abort_if(! $user, 403);
 
-            if (! $user) {
-                abort(403);
-            }
-
-            // دعم حالتي: Route Model Binding أو ID
             if (! $boq instanceof Boq) {
                 $boq = Boq::findOrFail((int) $boq);
             }
 
-            // Strongest scope: branch
             if (filled($user->current_branch_id)) {
-                abort_unless(
-                    (int) $boq->branch_id === (int) $user->current_branch_id,
-                    404
-                );
-                return;
+                abort_unless((int) $boq->branch_id === (int) $user->current_branch_id, 404);
+                return $boq;
             }
 
-            // Fallback scope: company
             if (filled($user->current_company_id)) {
-                abort_unless(
-                    (int) $boq->company_id === (int) $user->current_company_id,
-                    404
-                );
-                return;
+                abort_unless((int) $boq->company_id === (int) $user->current_company_id, 404);
+                return $boq;
             }
 
             abort(403, 'No active tenant context.');
@@ -76,10 +72,7 @@ Route::middleware(['web', 'auth'])
             */
             Route::get('{boq}/print', function ($boq) use ($enforceBoqContext) {
 
-                $enforceBoqContext($boq);
-
-                // تأكيد إن اللي راجع Model
-                $boq = $boq instanceof Boq ? $boq : Boq::findOrFail((int) $boq);
+                $boq = $enforceBoqContext($boq);
 
                 return view(
                     'reports.boq.print',
@@ -91,19 +84,81 @@ Route::middleware(['web', 'auth'])
 
             /*
             |--------------------------------------------------------------------------
-            | PDF
+            | PDF (ASYNC) - Start Generation
             |--------------------------------------------------------------------------
             */
-            Route::get('{boq}/pdf', function ($boq) use ($enforceBoqContext) {
+            Route::post('{boq}/pdf', function ($boq) use ($enforceBoqContext) {
 
-                $enforceBoqContext($boq);
+                $boq = $enforceBoqContext($boq);
 
-                $boq = $boq instanceof Boq ? $boq : Boq::findOrFail((int) $boq);
+                dispatch(new \App\Jobs\GenerateBoqPdfJob($boq->id));
 
-                return app(ExportBoqPdf::class)->handle($boq->id);
+                return response()->json([
+                    'status'       => 'queued',
+                    'message'      => 'PDF generation started',
+                    'status_url'   => url("/reports/boqs/{$boq->id}/pdf/status"),
+                    'download_url' => url("/reports/boqs/{$boq->id}/pdf/download"),
+                ]);
             })
                 ->whereNumber('boq')
-                ->name('reports.boq.pdf');
+                ->name('reports.boq.pdf.start');
+
+            /*
+            |--------------------------------------------------------------------------
+            | PDF - Status
+            |--------------------------------------------------------------------------
+            */
+            Route::get('{boq}/pdf/status', function ($boq) use ($enforceBoqContext) {
+
+                $boq = $enforceBoqContext($boq);
+
+                $path = storage_path("app/pdf-cache/boqs/boq_{$boq->id}.pdf");
+
+                return response()->json([
+                    'ready' => file_exists($path),
+                ]);
+            })
+                ->whereNumber('boq')
+                ->name('reports.boq.pdf.status');
+
+            /*
+            |--------------------------------------------------------------------------
+            | PDF - Download
+            |--------------------------------------------------------------------------
+            */
+            Route::get('{boq}/pdf/download', function ($boq) use ($enforceBoqContext) {
+
+                $boq = $enforceBoqContext($boq);
+
+                $path = storage_path("app/pdf-cache/boqs/boq_{$boq->id}.pdf");
+
+                // ✅ بدل 404: نرجّع 409 "لسه بيتجهز"
+                if (! file_exists($path)) {
+                    return response(
+                        "PDF is not ready yet. Start generation via POST /reports/boqs/{$boq->id}/pdf then retry.",
+                        409
+                    );
+                }
+
+                $filename = 'BOQ-' . ($boq->code ?? $boq->id) . '.pdf';
+
+                return response()->download($path, $filename, [
+                    'Content-Type' => 'application/pdf',
+                ]);
+            })
+                ->whereNumber('boq')
+                ->name('reports.boq.pdf.download');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Legacy GET /pdf => redirect to download
+            |--------------------------------------------------------------------------
+            */
+            Route::get('{boq}/pdf', function ($boq) {
+                return redirect()->to("/reports/boqs/{$boq}/pdf/download");
+            })
+                ->whereNumber('boq')
+                ->name('reports.boq.pdf.legacy');
 
             /*
             |--------------------------------------------------------------------------
@@ -112,9 +167,7 @@ Route::middleware(['web', 'auth'])
             */
             Route::get('{boq}/excel', function ($boq) use ($enforceBoqContext) {
 
-                $enforceBoqContext($boq);
-
-                $boq = $boq instanceof Boq ? $boq : Boq::findOrFail((int) $boq);
+                $boq = $enforceBoqContext($boq);
 
                 return Excel::download(
                     new BoqItemsExport($boq->id),

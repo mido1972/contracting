@@ -2,21 +2,21 @@
 
 namespace App\Filament\Resources\Boqs\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
+use App\Models\Boq;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
 
 class BoqsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            // بدل EditAction: خلي الضغط على الصف يفتح صفحة التعديل مباشرة
+            ->recordUrl(fn (Boq $record) => route('filament.admin.resources.boqs.edit', ['record' => $record]))
+
             ->columns([
                 TextColumn::make('code')
-                    ->label('كود')
+                    ->label('رقم المقايسة')
                     ->searchable()
                     ->sortable(),
 
@@ -27,46 +27,41 @@ class BoqsTable
 
                 TextColumn::make('status')
                     ->label('الحالة')
-                    ->badge()
-                    ->sortable(),
-
-                TextColumn::make('total_amount')
-                    ->label('الإجمالي')
-                    ->numeric(2)
-                    ->sortable(),
+                    ->badge(),
 
                 TextColumn::make('created_at')
-                    ->label('تاريخ الإضافة')
-                    ->date()
+                    ->label('تاريخ الإنشاء')
+                    ->dateTime('Y-m-d H:i')
                     ->sortable(),
-            ])
-            ->recordActions([
-                // 🖨️ Print
-                Action::make('print')
+
+                // روابط مباشرة (بدون Actions) – ثابتة وسهلة
+                TextColumn::make('print_link')
                     ->label('طباعة')
+                    ->state(fn () => 'طباعة')
                     ->icon('heroicon-o-printer')
-                    ->url(fn ($record) => route('reports.boq.print', ['boq' => $record->id]), true),
+                    ->color('primary')
+                    ->url(fn (Boq $record) => route('reports.boq.print', ['boq' => $record->id]))
+                    ->openUrlInNewTab(),
 
-                // 📄 PDF
-                Action::make('pdf')
+                TextColumn::make('pdf_link')
                     ->label('PDF')
+                    ->state(fn () => 'PDF')
                     ->icon('heroicon-o-document-arrow-down')
-                    ->url(fn ($record) => route('reports.boq.pdf', ['boq' => $record->id]), true),
+                    ->color('success')
+                    // حسب route:list عندك: ده الاسم الصحيح لمسار /pdf
+                    ->url(fn (Boq $record) => route('reports.boq.pdf.start', ['boq' => $record->id]))
+                    ->openUrlInNewTab(),
 
-                // 📊 Excel
-                Action::make('excel')
+                TextColumn::make('excel_link')
                     ->label('Excel')
+                    ->state(fn () => 'Excel')
                     ->icon('heroicon-o-table-cells')
-                    ->url(fn ($record) => route('reports.boq.excel', ['boq' => $record->id]), true),
+                    ->color('warning')
+                    ->url(fn (Boq $record) => route('reports.boq.excel', ['boq' => $record->id]))
+                    ->openUrlInNewTab(),
+            ])
 
-                // ✏️ Edit
-                EditAction::make()->label('تعديل'),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ])
-            ->defaultSort('id', 'desc');
+            // مهم: مفيش actions هنا خالص
+            ->actions([]);
     }
 }
