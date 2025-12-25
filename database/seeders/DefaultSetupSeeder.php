@@ -16,14 +16,18 @@ class DefaultSetupSeeder extends Seeder
     {
         /*
         |--------------------------------------------------------------------------
-        | 1️⃣ Admin User
+        | 1️⃣ Admin User (ENV-aware)
         |--------------------------------------------------------------------------
         */
-        User::firstOrCreate(
-            ['email' => 'admin@thiqah.local'],
+        $adminEmail = env('SEED_ADMIN_EMAIL', 'admin@thiqah.local');
+        $adminName  = env('SEED_ADMIN_NAME', 'System Admin');
+        $adminPass  = env('SEED_ADMIN_PASSWORD', 'admin123');
+
+        $admin = User::firstOrCreate(
+            ['email' => $adminEmail],
             [
-                'name'     => 'System Admin',
-                'password' => Hash::make('admin123'),
+                'name'     => $adminName,
+                'password' => Hash::make($adminPass),
             ]
         );
 
@@ -35,26 +39,26 @@ class DefaultSetupSeeder extends Seeder
         $companyKSA = Company::firstOrCreate(
             ['code' => 'KSA'],
             [
-                'name_ar'         => 'ثقة – السعودية',
-                'name_en'         => 'Thiqah Saudi',
-                'currency_code'   => 'SAR',
-                'currency_symbol'=> '﷼',
-                'locale'          => 'ar',
-                'timezone'        => 'Asia/Riyadh',
-                'is_active'       => true,
+                'name_ar'          => 'ثقة – السعودية',
+                'name_en'          => 'Thiqah Saudi',
+                'currency_code'    => 'SAR',
+                'currency_symbol'  => '﷼',
+                'locale'           => 'ar',
+                'timezone'         => 'Asia/Riyadh',
+                'is_active'        => true,
             ]
         );
 
         $companyEGY = Company::firstOrCreate(
             ['code' => 'EGY'],
             [
-                'name_ar'         => 'ثقة – مصر',
-                'name_en'         => 'Thiqah Egypt',
-                'currency_code'   => 'EGP',
-                'currency_symbol'=> 'E£',
-                'locale'          => 'ar',
-                'timezone'        => 'Africa/Cairo',
-                'is_active'       => true,
+                'name_ar'          => 'ثقة – مصر',
+                'name_en'          => 'Thiqah Egypt',
+                'currency_code'    => 'EGP',
+                'currency_symbol'  => 'E£',
+                'locale'           => 'ar',
+                'timezone'         => 'Africa/Cairo',
+                'is_active'        => true,
             ]
         );
 
@@ -88,7 +92,6 @@ class DefaultSetupSeeder extends Seeder
                 'is_active'     => true,
             ]
         );
-
 
         /*
         |--------------------------------------------------------------------------
