@@ -9,7 +9,9 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -21,9 +23,29 @@ class BoqItemsRelationManager extends RelationManager
 
     protected static ?string $title = 'بنود المقايسة';
 
+    /**
+     * الحالة الحالية للمقايسة
+     */
     protected function isDraft(): bool
     {
         return (string) ($this->getOwnerRecord()?->status ?? '') === 'DRAFT';
+    }
+
+    /**
+     * 🔒 Server-side safety
+     * يمنع أي تعديل لو المقايسة مش Draft
+     */
+    protected function guardDraftOnly(): void
+    {
+        if (! $this->isDraft()) {
+            Notification::make()
+                ->title('غير مسموح')
+                ->body('لا يمكن تعديل بنود المقايسة إلا وهي في حالة مسودة (DRAFT).')
+                ->danger()
+                ->send();
+
+            throw new Halt();
+        }
     }
 
     public function table(Table $table): Table
@@ -68,6 +90,7 @@ class BoqItemsRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->visible(fn () => $this->isDraft())
+                    ->before(fn () => $this->guardDraftOnly())
                     ->form([
                         TextInput::make('sort_order')
                             ->label('ترتيب')
@@ -127,6 +150,7 @@ class BoqItemsRelationManager extends RelationManager
             ->actions([
                 EditAction::make()
                     ->visible(fn () => $this->isDraft())
+                    ->before(fn () => $this->guardDraftOnly())
                     ->form([
                         TextInput::make('sort_order')
                             ->label('ترتيب')
@@ -175,7 +199,8 @@ class BoqItemsRelationManager extends RelationManager
                     ]),
 
                 DeleteAction::make()
-                    ->visible(fn () => $this->isDraft()),
+                    ->visible(fn () => $this->isDraft())
+                    ->before(fn () => $this->guardDraftOnly()),
             ]);
     }
 }
