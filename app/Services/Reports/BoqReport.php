@@ -26,7 +26,6 @@ class BoqReport
      */
     public function build(int $boqId): array
     {
-        // Select only guaranteed columns
         $columns = [
             'id',
             'code',
@@ -48,11 +47,25 @@ class BoqReport
         $boq = Boq::query()
             ->select($columns)
             ->with([
-                'company',
-                'branch',
-                'project',
+                'company:id,name',
+                'branch:id,name',
+                'project:id,name',
                 'items' => function ($q) {
-                    $q->with(['workItem', 'unit'])
+                    $q->select([
+                            'id',
+                            'boq_id',
+                            'work_item_id',
+                            'unit_id',
+                            'quantity',
+                            'unit_price',
+                            'total_price',
+                            'sort_order',
+                            'notes',
+                        ])
+                        ->with([
+                            'workItem:id,code,name',
+                            'unit:id,name',
+                        ])
                         ->orderBy('sort_order')
                         ->orderBy('id');
                 },
@@ -63,11 +76,7 @@ class BoqReport
 
         $subtotal = (float) $items->sum('total_price');
 
-        $totalAmount = (float) (
-            filled($boq->total_amount)
-                ? $boq->total_amount
-                : $subtotal
-        );
+        $totalAmount = (float) (filled($boq->total_amount) ? $boq->total_amount : $subtotal);
 
         $currency = 'SAR';
         if ($this->hasCurrencyCodeColumn() && filled($boq->currency_code)) {

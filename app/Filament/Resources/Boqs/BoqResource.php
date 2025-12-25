@@ -24,10 +24,8 @@ class BoqResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    // ترتيب الظهور في القائمة
     protected static ?int $navigationSort = 10;
 
-    // التعريب والتنظيم
     public static function getNavigationLabel(): string
     {
         return 'المقايسات';
@@ -58,18 +56,11 @@ class BoqResource extends Resource
         return BoqsTable::configure($table);
     }
 
-    /**
-     * ✅ فلترة المقايسات حسب الفرع/الشركة الحالية للمستخدم
-     */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->forCurrentContext();
+        return parent::getEloquentQuery()->forCurrentContext();
     }
 
-    /**
-     * ✅ ربط RelationManagers
-     */
     public static function getRelations(): array
     {
         return [

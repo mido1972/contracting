@@ -14,77 +14,61 @@
    ========================= */
 @page{
     size: A4;
-    margin: 0; /* هنخلي الهوامش داخل الورقة نفسها */
+    margin: 0;
 }
 
 *{ box-sizing:border-box; }
 
 /* =========================
-   FONTS (HTTP only)
+   FONTS (LOCAL ONLY)
    ========================= */
 @font-face{
     font-family: "Cairo";
-    src: url('{{ asset("fonts/cairo/Cairo-Regular.ttf") }}') format("truetype");
+    src: url('{{ public_path("fonts/cairo/Cairo-Regular.ttf") }}') format("truetype");
     font-weight: 400;
-    font-style: normal;
 }
 @font-face{
     font-family: "Cairo";
-    src: url('{{ asset("fonts/cairo/Cairo-Bold.ttf") }}') format("truetype");
+    src: url('{{ public_path("fonts/cairo/Cairo-Bold.ttf") }}') format("truetype");
     font-weight: 700;
-    font-style: normal;
 }
 
 html, body{
     margin:0;
     padding:0;
-    color:#111;
+    color:#000;
     font-size:12px;
-    font-family: "Cairo", Arial, "DejaVu Sans", sans-serif;
+    font-family:"Cairo","DejaVu Sans",Arial,sans-serif;
     direction:rtl;
-    unicode-bidi:embed;
 }
 
-/* ✅ على الشاشة: خلفية رمادي + ورقة A4 في النص */
+/* =========================
+   SCREEN VS PRINT
+   ========================= */
 @media screen{
     body{ background:#f2f2f2; }
 }
 
-/* ✅ الورقة نفسها */
 .sheet{
-    width: 210mm;
-    min-height: 297mm;
+    width:210mm;
+    min-height:297mm;
     background:#fff;
-
-    /* الهوامش المطلوبة داخل الورقة */
-    padding: 12mm 10mm 14mm 10mm;
-
-    margin: 10mm auto;
-    border: 1px solid #ddd;
+    padding:12mm 10mm 14mm;
+    margin:10mm auto;
+    border:1px solid #000;
 }
 
-@media screen{
-    .sheet{
-        box-shadow: 0 6px 24px rgba(0,0,0,.12);
-        border-radius: 6px;
-    }
-}
-
-/* ✅ عند الطباعة/PDF: بدون shadow أو radius */
 @media print{
     body{ background:#fff; }
     .sheet{
         margin:0;
         border:none;
-        border-radius:0;
-        box-shadow:none;
     }
 }
 
 /* Numbers */
 .num{
-    direction:ltr !important;
-    unicode-bidi:isolate !important;
+    direction:ltr;
     text-align:left;
     white-space:nowrap;
 }
@@ -97,8 +81,8 @@ html, body{
     justify-content:flex-end;
 }
 .btn{
-    padding:8px 12px;
-    border:1px solid #ccc;
+    padding:6px 10px;
+    border:1px solid #000;
     background:#fff;
     cursor:pointer;
     font-size:12px;
@@ -113,7 +97,6 @@ html, body{
     padding:10px;
     margin-bottom:10px;
     display:flex;
-    justify-content:space-between;
     gap:10px;
 }
 .header .block{ width:50%; }
@@ -123,7 +106,7 @@ html, body{
     margin-bottom:6px;
 }
 .kv{ margin:0; line-height:1.6; }
-.muted{ color:#666; }
+.muted{ color:#555; }
 
 /* =========================
    TABLE
@@ -137,8 +120,6 @@ th, td{
     border:1px solid #000;
     padding:6px;
     vertical-align:top;
-    word-wrap:break-word;
-    overflow-wrap:break-word;
 }
 thead th{
     background:#eee;
@@ -197,10 +178,10 @@ tr{ page-break-inside:avoid; }
         </div>
 
         <div class="block">
-            <p class="kv"><b>الشركة:</b> {{ $boq->company?->name_ar ?? $boq->company?->name_en ?? '-' }}</p>
-            <p class="kv"><b>الفرع:</b> {{ $boq->branch?->name_ar ?? $boq->branch?->name_en ?? '-' }}</p>
+            <p class="kv"><b>الشركة:</b> {{ $boq->company?->name ?? '-' }}</p>
+            <p class="kv"><b>الفرع:</b> {{ $boq->branch?->name ?? '-' }}</p>
             <p class="kv"><b>المشروع:</b> {{ $boq->project?->name ?? '-' }}</p>
-            <p class="kv muted"><b>تاريخ الطباعة:</b> {{ $printed_at?->format('Y-m-d H:i') }}</p>
+            <p class="kv muted"><b>تاريخ الطباعة:</b> {{ $printed_at->format('Y-m-d H:i') }}</p>
         </div>
     </div>
 
@@ -216,7 +197,6 @@ tr{ page-break-inside:avoid; }
             <th style="width:150px;">ملاحظات</th>
         </tr>
         </thead>
-
         <tbody>
         @forelse($items as $i => $it)
             <tr>

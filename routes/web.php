@@ -6,11 +6,12 @@ use App\Http\Controllers\Filament\BranchSwitchController;
 use App\Models\Boq;
 use App\Exports\BoqItemsExport;
 use App\Services\Reports\BoqReport;
+use App\Jobs\GenerateBoqPdfJob;
 use Maatwebsite\Excel\Facades\Excel;
 
 /*
 |--------------------------------------------------------------------------
-| Root Route (مهم جدًا لتفادي 404 والبطء العام)
+| Root Route
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
@@ -28,7 +29,7 @@ Route::post('/filament/branch/switch', BranchSwitchController::class)
 
 /*
 |--------------------------------------------------------------------------
-| Reports (BOQ): Print / PDF / Excel
+| Reports (BOQ): Print / PDF / Excel — SYNC PDF
 |--------------------------------------------------------------------------
 */
 Route::middleware(['web', 'auth'])
@@ -37,7 +38,7 @@ Route::middleware(['web', 'auth'])
 
         /*
         |--------------------------------------------------------------------------
-        | Tenant Context Guard (Reusable)
+        | Tenant Context Guard
         |--------------------------------------------------------------------------
         */
         $enforceBoqContext = function ($boq): Boq {
@@ -84,46 +85,7 @@ Route::middleware(['web', 'auth'])
 
             /*
             |--------------------------------------------------------------------------
-            | PDF (ASYNC) - Start Generation
-            |--------------------------------------------------------------------------
-            */
-            Route::post('{boq}/pdf', function ($boq) use ($enforceBoqContext) {
-
-                $boq = $enforceBoqContext($boq);
-
-                dispatch(new \App\Jobs\GenerateBoqPdfJob($boq->id));
-
-                return response()->json([
-                    'status'       => 'queued',
-                    'message'      => 'PDF generation started',
-                    'status_url'   => url("/reports/boqs/{$boq->id}/pdf/status"),
-                    'download_url' => url("/reports/boqs/{$boq->id}/pdf/download"),
-                ]);
-            })
-                ->whereNumber('boq')
-                ->name('reports.boq.pdf.start');
-
-            /*
-            |--------------------------------------------------------------------------
-            | PDF - Status
-            |--------------------------------------------------------------------------
-            */
-            Route::get('{boq}/pdf/status', function ($boq) use ($enforceBoqContext) {
-
-                $boq = $enforceBoqContext($boq);
-
-                $path = storage_path("app/pdf-cache/boqs/boq_{$boq->id}.pdf");
-
-                return response()->json([
-                    'ready' => file_exists($path),
-                ]);
-            })
-                ->whereNumber('boq')
-                ->name('reports.boq.pdf.status');
-
-            /*
-            |--------------------------------------------------------------------------
-            | PDF - Download
+            | PDF (SYNC) — Generate (if missing) then Download
             |--------------------------------------------------------------------------
             */
             Route::get('{boq}/pdf/download', function ($boq) use ($enforceBoqContext) {
@@ -132,12 +94,12 @@ Route::middleware(['web', 'auth'])
 
                 $path = storage_path("app/pdf-cache/boqs/boq_{$boq->id}.pdf");
 
-                // ✅ بدل 404: نرجّع 409 "لسه بيتجهز"
                 if (! file_exists($path)) {
-                    return response(
-                        "PDF is not ready yet. Start generation via POST /reports/boqs/{$boq->id}/pdf then retry.",
-                        409
-                    );
+                    dispatch_sync(new GenerateBoqPdfJob($boq->id));
+                }
+
+                if (! file_exists($path)) {
+                    abort(500, 'PDF generation failed.');
                 }
 
                 $filename = 'BOQ-' . ($boq->code ?? $boq->id) . '.pdf';
@@ -171,7 +133,7 @@ Route::middleware(['web', 'auth'])
 
                 return Excel::download(
                     new BoqItemsExport($boq->id),
-                    'BOQ-Items-' . $boq->id . '.xlsx'
+                    'BOQ-Items-' . ($boq->code ?? $boq->id) . '.xlsx'
                 );
             })
                 ->whereNumber('boq')
