@@ -5,18 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>طباعة مقايسة - {{ $boq->code ?? $boq->id }}</title>
 
-    {{-- Cairo (browser). For PDF (dompdf) remote fonts may not load; fallback stays --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-
     <style>
         /* =========================
-           A4 PAGE SETUP (Print)
+           EMBED LOCAL FONTS (Works in Browser + DomPDF)
+           ========================= */
+        @font-face{
+            font-family: "CairoLocal";
+            font-style: normal;
+            font-weight: 400;
+            src: url("{{ public_path('fonts/cairo/Cairo-Regular.ttf') }}") format("truetype");
+        }
+        @font-face{
+            font-family: "CairoLocal";
+            font-style: normal;
+            font-weight: 600;
+            src: url("{{ public_path('fonts/cairo/Cairo-SemiBold.ttf') }}") format("truetype");
+        }
+        @font-face{
+            font-family: "CairoLocal";
+            font-style: normal;
+            font-weight: 700;
+            src: url("{{ public_path('fonts/cairo/Cairo-Bold.ttf') }}") format("truetype");
+        }
+
+        /* =========================
+           A4 PAGE SETUP
            ========================= */
         @page {
             size: A4;
-            margin: 12mm 10mm 14mm 10mm; /* bottom أكبر عشان الفوتر */
+            margin: 12mm 10mm 14mm 10mm;
         }
 
         :root{
@@ -27,26 +44,18 @@
 
         * { box-sizing: border-box; }
 
-        html, body{
-            height: 100%;
-        }
-
         body{
-            font-family: "Cairo", "DejaVu Sans", Arial, sans-serif;
+            font-family: "CairoLocal", "DejaVu Sans", Arial, sans-serif;
             font-size: 12px;
             color: #111;
             margin: 0;
             background: #fff;
         }
 
-        /* =========================
-           Screen Preview (helps you see A4)
-           ========================= */
         .page{
             width: 210mm;
             min-height: 297mm;
             margin: 10mm auto;
-            padding: 0; /* margins handled by @page on print */
             background: #fff;
         }
 
@@ -90,23 +99,16 @@
             margin: 0 0 6px 0;
         }
 
-        .kv{
-            margin: 0;
-            line-height: 1.7;
-        }
-
+        .kv{ margin: 0; line-height: 1.7; }
         .kv b{ font-weight: 700; }
         .muted{ color: var(--muted); }
 
-        /* =========================
-           TABLE
-           ========================= */
         table{
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
             border: 1px solid var(--border);
-            table-layout: fixed; /* مهم: يمنع الجدول يمد برّه */
+            table-layout: fixed;
         }
 
         th, td{
@@ -122,20 +124,18 @@
             text-align: center;
         }
 
-        /* تكرار الهيدر عند الطباعة */
         thead { display: table-header-group; }
         tfoot { display: table-footer-group; }
 
         td.num{
-            text-align: left;      /* لأننا RTL */
+            text-align: left;
             direction: ltr;
-            white-space: nowrap;   /* الأرقام ما تتكسرش */
+            white-space: nowrap;
         }
 
         td.center{ text-align: center; }
         td.wrap{ white-space: normal; }
 
-        /* منع تكسير الصف داخل الصفحة قدر الإمكان */
         tr{ page-break-inside: avoid; }
 
         .totals{
@@ -168,9 +168,6 @@
             font-size: 13px;
         }
 
-        /* =========================
-           FOOTER (print)
-           ========================= */
         .footer{
             position: fixed;
             bottom: 8mm;
@@ -187,9 +184,6 @@
             content: counter(page) " / " counter(pages);
         }
 
-        /* =========================
-           PRINT MODE
-           ========================= */
         @media print {
             .toolbar { display: none !important; }
             .page { width: auto; min-height: auto; margin: 0; }
@@ -201,9 +195,11 @@
 <body>
 
 {{-- Toolbar (screen only) --}}
+@if(empty($isPdf))
 <div class="toolbar">
     <button class="btn" onclick="window.print()">🖨️ طباعة</button>
 </div>
+@endif
 
 <div class="page">
     <div class="container">
