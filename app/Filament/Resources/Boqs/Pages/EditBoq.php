@@ -7,6 +7,7 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Database\Eloquent\Builder;
 
 class EditBoq extends EditRecord
@@ -22,6 +23,24 @@ class EditBoq extends EditRecord
     {
         return parent::getRecordQuery()
             ->forCurrentContext();
+    }
+
+    /**
+     * ✅ Safety (Server-side):
+     * منع حفظ أي تعديل على المقايسة لو ليست DRAFT
+     * (حتى لو زرار Save ظاهر لأي سبب أو محاولة POST مباشرة)
+     */
+    protected function beforeSave(): void
+    {
+        if ((string) $this->record->status !== 'DRAFT') {
+            Notification::make()
+                ->title('غير مسموح')
+                ->body('لا يمكن تعديل المقايسة إلا وهي في حالة مسودة (DRAFT).')
+                ->danger()
+                ->send();
+
+            throw new Halt();
+        }
     }
 
     /**
@@ -49,6 +68,17 @@ class EditBoq extends EditRecord
                 ->visible(fn () => (string) $this->record->status === 'DRAFT')
                 ->requiresConfirmation()
                 ->action(function () {
+                    // Safety
+                    if ((string) $this->record->status !== 'DRAFT') {
+                        Notification::make()
+                            ->title('غير مسموح')
+                            ->body('لا يمكن إرسال المقايسة إلا وهي مسودة (DRAFT).')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
                     $this->record->update([
                         'status' => 'SUBMITTED',
                     ]);
@@ -66,6 +96,17 @@ class EditBoq extends EditRecord
                 ->visible(fn () => (string) $this->record->status === 'SUBMITTED')
                 ->requiresConfirmation()
                 ->action(function () {
+                    // Safety
+                    if ((string) $this->record->status !== 'SUBMITTED') {
+                        Notification::make()
+                            ->title('غير مسموح')
+                            ->body('لا يمكن إرجاع المقايسة لمسودة إلا وهي مُرسلة (SUBMITTED).')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
                     $this->record->update([
                         'status' => 'DRAFT',
                     ]);
