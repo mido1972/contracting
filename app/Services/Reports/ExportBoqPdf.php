@@ -15,11 +15,23 @@ class ExportBoqPdf
     {
         $data = $this->report->build($boqId);
 
+        // Flag to let the Blade know this is PDF mode (hide buttons, tweak layout if needed)
+        $data['isPdf'] = true;
+
         $pdf = Pdf::loadView('reports.boq.print', $data)
             ->setPaper('a4', 'portrait')
             ->setOptions([
-                'defaultFont' => 'DejaVu Sans', // good Arabic support
-                'isRemoteEnabled' => true,       // allows loading remote assets (if any)
+                // Arabic-friendly font
+                'defaultFont' => 'DejaVu Sans',
+
+                // Better CSS/HTML parsing
+                'isHtml5ParserEnabled' => true,
+
+                // Allow remote assets if you use e.g. images/fonts via url()
+                'isRemoteEnabled' => true,
+
+                // Rendering quality
+                'dpi' => 96,
             ]);
 
         $filename = 'BOQ-' . ($data['boq']->code ?? $data['boq']->id) . '.pdf';
