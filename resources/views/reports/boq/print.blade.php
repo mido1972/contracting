@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>طباعة مقايسة - {{ $boq->code ?? $boq->id }}</title>
 
+    {{-- ✅ Browser Print: use Google Cairo for best on-screen printing --}}
+    @if(empty($isPdf))
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    @endif
+
     <style>
         /* =========================
-           EMBED LOCAL FONTS (wkhtmltopdf needs file:///)
+           PDF (wkhtmltopdf): embed LOCAL fonts using file:///
            ========================= */
         @font-face{
             font-family: "CairoLocal";
@@ -45,11 +52,48 @@
         * { box-sizing: border-box; }
 
         body{
-            font-family: "CairoLocal", Arial, sans-serif;
+            font-family: "CairoLocal", Arial, sans-serif; /* default (PDF-safe) */
             font-size: 12px;
             color: #111;
             margin: 0;
             background: #fff;
+        }
+
+        /* ✅ Browser-only font override */
+        body.screen-font{
+            font-family: "Cairo", Arial, sans-serif;
+        }
+
+        /* =========================
+           ✅ Arabic shaping FIX (wkhtmltopdf):
+           Force font + direction + unicode-bidi on all table elements
+           ========================= */
+        html, body, div, p, span, table, thead, tbody, tfoot, tr, th, td {
+            font-family: "CairoLocal", Arial, sans-serif !important;
+            direction: rtl;
+            unicode-bidi: embed;
+        }
+
+        /* ✅ Keep browser print Cairo (screen only) */
+        body.screen-font div,
+        body.screen-font p,
+        body.screen-font span,
+        body.screen-font table,
+        body.screen-font thead,
+        body.screen-font tbody,
+        body.screen-font tfoot,
+        body.screen-font tr,
+        body.screen-font th,
+        body.screen-font td {
+            font-family: "Cairo", Arial, sans-serif !important;
+        }
+
+        /* Numbers cells */
+        td.num{
+            text-align: left;
+            direction: ltr !important;
+            unicode-bidi: isolate !important;
+            white-space: nowrap;
         }
 
         .page{
@@ -127,12 +171,6 @@
 
         thead { display: table-header-group; }
 
-        td.num{
-            text-align: left;
-            direction: ltr;
-            white-space: nowrap;
-        }
-
         td.center{ text-align: center; }
         td.wrap{ white-space: normal; }
 
@@ -154,7 +192,12 @@
         }
 
         .totals-row .label{ font-weight: 700; }
-        .totals-row .value{ direction:ltr; text-align:left; font-weight: 700; }
+        .totals-row .value{
+            direction:ltr;
+            text-align:left;
+            font-weight: 700;
+            unicode-bidi:isolate;
+        }
 
         .notes{
             margin-top: 10px;
@@ -180,11 +223,30 @@
             align-items: center;
         }
 
-        /* wkhtmltopdf لا يدعم counter(page) بنفس طريقة CSS،
-           هنسيبها نص ثابت، ولو احتجنا أرقام صفحات نعملها بـ header/footer options */
-        .pages:after{
-            content: "";
+        /* =========================
+           ✅ PDF MODE: lock visual styling (borders, header bg)
+           ========================= */
+        body.pdf-mode .page{
+            margin: 0 auto;
         }
+
+        body.pdf-mode table,
+        body.pdf-mode th,
+        body.pdf-mode td,
+        body.pdf-mode .header,
+        body.pdf-mode .totals,
+        body.pdf-mode .notes{
+            border-color: var(--border) !important;
+        }
+
+        body.pdf-mode thead th{
+            background: var(--bg) !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        body.pdf-mode table{ border-width: 1px !important; }
+        body.pdf-mode th, body.pdf-mode td{ border-width: 1px !important; }
 
         @media print {
             .toolbar { display: none !important; }
@@ -194,7 +256,7 @@
     </style>
 </head>
 
-<body>
+<body class="{{ empty($isPdf) ? 'screen-font' : 'pdf-mode' }}">
 
 {{-- Toolbar (screen only) --}}
 @if(empty($isPdf))
