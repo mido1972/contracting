@@ -50,7 +50,8 @@ class DemoDataSeeder extends Seeder
         // =========================
         // 2) Company: أضواء الخليل للمقاولات
         // =========================
-        $companyId = $upsertGetId('companies',
+        $companyId = $upsertGetId(
+            'companies',
             ['code' => 'ADWAA'],
             [
                 'name'            => 'أضواء الخليل للمقاولات',
@@ -68,14 +69,15 @@ class DemoDataSeeder extends Seeder
         // 3) Branches: مكة / المدينة / الرياض
         // =========================
         $branches = [
-            ['code' => 'MKK', 'name_ar' => 'مكة',             'name_en' => 'Makkah',   'currency_code' => 'SAR', 'currency_symbol' => 'SAR', 'timezone' => 'Asia/Riyadh'],
-            ['code' => 'MAD', 'name_ar' => 'المدينة المنورة', 'name_en' => 'Madinah',  'currency_code' => 'SAR', 'currency_symbol' => 'SAR', 'timezone' => 'Asia/Riyadh'],
-            ['code' => 'RYD', 'name_ar' => 'الرياض',          'name_en' => 'Riyadh',   'currency_code' => 'SAR', 'currency_symbol' => 'SAR', 'timezone' => 'Asia/Riyadh'],
+            ['code' => 'MKK', 'name_ar' => 'مكة',             'name_en' => 'Makkah',  'currency_code' => 'SAR', 'currency_symbol' => 'SAR', 'timezone' => 'Asia/Riyadh'],
+            ['code' => 'MAD', 'name_ar' => 'المدينة المنورة', 'name_en' => 'Madinah', 'currency_code' => 'SAR', 'currency_symbol' => 'SAR', 'timezone' => 'Asia/Riyadh'],
+            ['code' => 'RYD', 'name_ar' => 'الرياض',          'name_en' => 'Riyadh',  'currency_code' => 'SAR', 'currency_symbol' => 'SAR', 'timezone' => 'Asia/Riyadh'],
         ];
 
         $branchIdsByCode = [];
         foreach ($branches as $b) {
-            $branchId = $upsertGetId('branches',
+            $branchId = $upsertGetId(
+                'branches',
                 ['company_id' => $companyId, 'code' => $b['code']],
                 [
                     'name'            => $b['name_ar'],
@@ -96,38 +98,39 @@ class DemoDataSeeder extends Seeder
         // 4) Units (lots) - units.code NOT NULL
         // =========================
         $units = [
-            ['code' => 'NO',   'ar' => 'رقم',          'en' => 'No.'],
-            ['code' => 'EA',   'ar' => 'قطعة',         'en' => 'Each'],
-            ['code' => 'SET',  'ar' => 'طقم',          'en' => 'Set'],
-            ['code' => 'LOT',  'ar' => 'دفعة',         'en' => 'Lot'],
-            ['code' => 'M',    'ar' => 'متر طولي',      'en' => 'm'],
-            ['code' => 'M2',   'ar' => 'متر مربع',      'en' => 'm²'],
-            ['code' => 'M3',   'ar' => 'متر مكعب',      'en' => 'm³'],
-            ['code' => 'CM',   'ar' => 'سنتيمتر',       'en' => 'cm'],
-            ['code' => 'MM',   'ar' => 'ملِّيمتر',      'en' => 'mm'],
-            ['code' => 'KM',   'ar' => 'كيلومتر',       'en' => 'km'],
-            ['code' => 'L',    'ar' => 'لتر',           'en' => 'L'],
-            ['code' => 'GAL',  'ar' => 'جالون',         'en' => 'Gallon'],
-            ['code' => 'KG',   'ar' => 'كيلوجرام',      'en' => 'kg'],
-            ['code' => 'TON',  'ar' => 'طن',            'en' => 'ton'],
-            ['code' => 'G',    'ar' => 'جرام',          'en' => 'g'],
-            ['code' => 'HR',   'ar' => 'ساعة',          'en' => 'hour'],
-            ['code' => 'DAY',  'ar' => 'يوم',           'en' => 'day'],
-            ['code' => 'WK',   'ar' => 'أسبوع',         'en' => 'week'],
-            ['code' => 'MON',  'ar' => 'شهر',           'en' => 'month'],
-            ['code' => 'TRIP', 'ar' => 'مشوار',         'en' => 'trip'],
-            ['code' => 'BAG',  'ar' => 'كيس',           'en' => 'bag'],
-            ['code' => 'BOX',  'ar' => 'صندوق',         'en' => 'box'],
-            ['code' => 'ROLL', 'ar' => 'لفة',           'en' => 'roll'],
-            ['code' => 'PAIR', 'ar' => 'زوج',           'en' => 'pair'],
+            ['code' => 'NO',   'ar' => 'رقم',      'en' => 'No.'],
+            ['code' => 'EA',   'ar' => 'قطعة',     'en' => 'Each'],
+            ['code' => 'SET',  'ar' => 'طقم',      'en' => 'Set'],
+            ['code' => 'LOT',  'ar' => 'دفعة',     'en' => 'Lot'],
+            ['code' => 'M',    'ar' => 'متر طولي',  'en' => 'm'],
+            ['code' => 'M2',   'ar' => 'متر مربع',  'en' => 'm²'],
+            ['code' => 'M3',   'ar' => 'متر مكعب',  'en' => 'm³'],
+            ['code' => 'CM',   'ar' => 'سنتيمتر',   'en' => 'cm'],
+            ['code' => 'MM',   'ar' => 'ملِّيمتر',  'en' => 'mm'],
+            ['code' => 'KM',   'ar' => 'كيلومتر',   'en' => 'km'],
+            ['code' => 'L',    'ar' => 'لتر',       'en' => 'L'],
+            ['code' => 'GAL',  'ar' => 'جالون',     'en' => 'Gallon'],
+            ['code' => 'KG',   'ar' => 'كيلوجرام',  'en' => 'kg'],
+            ['code' => 'TON',  'ar' => 'طن',        'en' => 'ton'],
+            ['code' => 'G',    'ar' => 'جرام',      'en' => 'g'],
+            ['code' => 'HR',   'ar' => 'ساعة',      'en' => 'hour'],
+            ['code' => 'DAY',  'ar' => 'يوم',       'en' => 'day'],
+            ['code' => 'WK',   'ar' => 'أسبوع',     'en' => 'week'],
+            ['code' => 'MON',  'ar' => 'شهر',       'en' => 'month'],
+            ['code' => 'TRIP', 'ar' => 'مشوار',     'en' => 'trip'],
+            ['code' => 'BAG',  'ar' => 'كيس',       'en' => 'bag'],
+            ['code' => 'BOX',  'ar' => 'صندوق',     'en' => 'box'],
+            ['code' => 'ROLL', 'ar' => 'لفة',       'en' => 'roll'],
+            ['code' => 'PAIR', 'ar' => 'زوج',       'en' => 'pair'],
         ];
 
         $unitIds = [];
         foreach ($units as $u) {
-            $id = $upsertGetId('units',
+            $id = $upsertGetId(
+                'units',
                 ['code' => $u['code']],
                 [
-                    'name'      => $u['ar'], // لو عندك name فقط
+                    'name'      => $u['ar'],
                     'name_ar'   => $u['ar'],
                     'name_en'   => $u['en'],
                     'is_active' => true,
@@ -156,7 +159,8 @@ class DemoDataSeeder extends Seeder
 
         $categoryIds = [];
         foreach ($categories as $c) {
-            $id = $upsertGetId('work_item_categories',
+            $id = $upsertGetId(
+                'work_item_categories',
                 ['code' => $c['code']],
                 [
                     'name'      => $c['ar'],
@@ -169,69 +173,58 @@ class DemoDataSeeder extends Seeder
         }
 
         // =========================
-        // 6) Work Items (a lot) - work_items.code if exists (filtered if not)
+        // 6) Work Items (a lot)
         // =========================
         $workItemsSeed = [
-            // SITE
-            ['cat' => 'SITE', 'code' => 'SITE-EXC',   'ar' => 'أعمال حفر عام',                 'en' => 'General excavation',     'unit' => 'M3'],
+            ['cat' => 'SITE', 'code' => 'SITE-EXC',   'ar' => 'أعمال حفر عام',                 'en' => 'General excavation',      'unit' => 'M3'],
             ['cat' => 'SITE', 'code' => 'SITE-BKF',   'ar' => 'ردم ودك طبقات',                'en' => 'Backfilling & compaction','unit' => 'M3'],
-            ['cat' => 'SITE', 'code' => 'SITE-HAUL',  'ar' => 'نقل ناتج الحفر',               'en' => 'Haul away',             'unit' => 'TRIP'],
+            ['cat' => 'SITE', 'code' => 'SITE-HAUL',  'ar' => 'نقل ناتج الحفر',               'en' => 'Haul away',               'unit' => 'TRIP'],
 
-            // CONC
-            ['cat' => 'CONC', 'code' => 'CONC-PLN',   'ar' => 'خرسانة نظافة',                 'en' => 'Lean concrete',         'unit' => 'M3'],
-            ['cat' => 'CONC', 'code' => 'CONC-RC',    'ar' => 'خرسانة مسلحة',                 'en' => 'Reinforced concrete',   'unit' => 'M3'],
-            ['cat' => 'CONC', 'code' => 'CONC-REBAR', 'ar' => 'حديد تسليح (توريد وتركيب)',   'en' => 'Rebar supply & fix',    'unit' => 'TON'],
-            ['cat' => 'CONC', 'code' => 'CONC-FORM',  'ar' => 'شدات خشبية',                   'en' => 'Formwork',              'unit' => 'M2'],
+            ['cat' => 'CONC', 'code' => 'CONC-PLN',   'ar' => 'خرسانة نظافة',                 'en' => 'Lean concrete',           'unit' => 'M3'],
+            ['cat' => 'CONC', 'code' => 'CONC-RC',    'ar' => 'خرسانة مسلحة',                 'en' => 'Reinforced concrete',     'unit' => 'M3'],
+            ['cat' => 'CONC', 'code' => 'CONC-REBAR', 'ar' => 'حديد تسليح (توريد وتركيب)',   'en' => 'Rebar supply & fix',      'unit' => 'TON'],
+            ['cat' => 'CONC', 'code' => 'CONC-FORM',  'ar' => 'شدات خشبية',                   'en' => 'Formwork',                'unit' => 'M2'],
 
-            // BLD
-            ['cat' => 'BLD',  'code' => 'BLD-BLOCK',  'ar' => 'بناء بلوك',                    'en' => 'Blockwork',             'unit' => 'M2'],
-            ['cat' => 'BLD',  'code' => 'BLD-PLSTR',  'ar' => 'لياسة داخلية',                 'en' => 'Internal plaster',      'unit' => 'M2'],
+            ['cat' => 'BLD',  'code' => 'BLD-BLOCK',  'ar' => 'بناء بلوك',                    'en' => 'Blockwork',               'unit' => 'M2'],
+            ['cat' => 'BLD',  'code' => 'BLD-PLSTR',  'ar' => 'لياسة داخلية',                 'en' => 'Internal plaster',        'unit' => 'M2'],
 
-            // FIN
-            ['cat' => 'FIN',  'code' => 'FIN-PAINT',  'ar' => 'دهانات داخلية',                'en' => 'Internal painting',     'unit' => 'M2'],
-            ['cat' => 'FIN',  'code' => 'FIN-TILES',  'ar' => 'توريد وتركيب سيراميك',        'en' => 'Tiles supply & fix',    'unit' => 'M2'],
-            ['cat' => 'FIN',  'code' => 'FIN-CEIL',   'ar' => 'أسقف مستعارة',                 'en' => 'Suspended ceiling',     'unit' => 'M2'],
-            ['cat' => 'FIN',  'code' => 'FIN-DOOR',   'ar' => 'أبواب خشب',                     'en' => 'Wooden doors',          'unit' => 'EA'],
+            ['cat' => 'FIN',  'code' => 'FIN-PAINT',  'ar' => 'دهانات داخلية',                'en' => 'Internal painting',       'unit' => 'M2'],
+            ['cat' => 'FIN',  'code' => 'FIN-TILES',  'ar' => 'توريد وتركيب سيراميك',        'en' => 'Tiles supply & fix',      'unit' => 'M2'],
+            ['cat' => 'FIN',  'code' => 'FIN-CEIL',   'ar' => 'أسقف مستعارة',                 'en' => 'Suspended ceiling',       'unit' => 'M2'],
+            ['cat' => 'FIN',  'code' => 'FIN-DOOR',   'ar' => 'أبواب خشب',                     'en' => 'Wooden doors',            'unit' => 'EA'],
 
-            // ELEC
-            ['cat' => 'ELEC', 'code' => 'ELEC-CABL',  'ar' => 'كابلات كهرباء',                'en' => 'Electrical cables',     'unit' => 'M'],
-            ['cat' => 'ELEC', 'code' => 'ELEC-LGHT',  'ar' => 'وحدات إنارة',                  'en' => 'Lighting fixtures',     'unit' => 'EA'],
-            ['cat' => 'ELEC', 'code' => 'ELEC-PANL',  'ar' => 'لوحات كهرباء',                 'en' => 'Electrical panels',     'unit' => 'EA'],
+            ['cat' => 'ELEC', 'code' => 'ELEC-CABL',  'ar' => 'كابلات كهرباء',                'en' => 'Electrical cables',       'unit' => 'M'],
+            ['cat' => 'ELEC', 'code' => 'ELEC-LGHT',  'ar' => 'وحدات إنارة',                  'en' => 'Lighting fixtures',       'unit' => 'EA'],
+            ['cat' => 'ELEC', 'code' => 'ELEC-PANL',  'ar' => 'لوحات كهرباء',                 'en' => 'Electrical panels',       'unit' => 'EA'],
 
-            // PLMB
-            ['cat' => 'PLMB', 'code' => 'PLMB-PIP',   'ar' => 'مواسير تغذية',                 'en' => 'Supply piping',         'unit' => 'M'],
-            ['cat' => 'PLMB', 'code' => 'PLMB-DREN',  'ar' => 'صرف صحي',                      'en' => 'Drainage',              'unit' => 'M'],
-            ['cat' => 'PLMB', 'code' => 'PLMB-FIX',   'ar' => 'أطقم صحية',                    'en' => 'Sanitary fixtures',     'unit' => 'SET'],
+            ['cat' => 'PLMB', 'code' => 'PLMB-PIP',   'ar' => 'مواسير تغذية',                 'en' => 'Supply piping',           'unit' => 'M'],
+            ['cat' => 'PLMB', 'code' => 'PLMB-DREN',  'ar' => 'صرف صحي',                      'en' => 'Drainage',                'unit' => 'M'],
+            ['cat' => 'PLMB', 'code' => 'PLMB-FIX',   'ar' => 'أطقم صحية',                    'en' => 'Sanitary fixtures',       'unit' => 'SET'],
 
-            // HVAC
-            ['cat' => 'HVAC', 'code' => 'HVAC-UNIT',  'ar' => 'وحدات تكييف',                  'en' => 'AC units',              'unit' => 'EA'],
-            ['cat' => 'HVAC', 'code' => 'HVAC-DUCT',  'ar' => 'دكت تكييف',                    'en' => 'HVAC ducting',          'unit' => 'M2'],
+            ['cat' => 'HVAC', 'code' => 'HVAC-UNIT',  'ar' => 'وحدات تكييف',                  'en' => 'AC units',                'unit' => 'EA'],
+            ['cat' => 'HVAC', 'code' => 'HVAC-DUCT',  'ar' => 'دكت تكييف',                    'en' => 'HVAC ducting',            'unit' => 'M2'],
 
-            // FIRE
-            ['cat' => 'FIRE', 'code' => 'FIRE-PIP',   'ar' => 'شبكة مواسير حريق',             'en' => 'Fire pipes network',    'unit' => 'M'],
-            ['cat' => 'FIRE', 'code' => 'FIRE-PUMP',  'ar' => 'مضخة حريق',                    'en' => 'Fire pump',             'unit' => 'EA'],
+            ['cat' => 'FIRE', 'code' => 'FIRE-PIP',   'ar' => 'شبكة مواسير حريق',             'en' => 'Fire pipes network',      'unit' => 'M'],
+            ['cat' => 'FIRE', 'code' => 'FIRE-PUMP',  'ar' => 'مضخة حريق',                    'en' => 'Fire pump',               'unit' => 'EA'],
         ];
 
-        // نزوّد البنود تلقائيًا (نكرر مع تنويع بسيط) عشان يبقى عندك داتا كتير
         $expanded = [];
         foreach ($workItemsSeed as $base) {
             $expanded[] = $base;
         }
-        // إضافة توليد بنود إضافية لكل تصنيف
-        $extraNames = [
-            'مادة + عمالة', 'توريد فقط', 'تركيب فقط', 'فحص واختبار', 'صيانة', 'تمديدات', 'تشغيل وتسليم'
-        ];
+
+        $extraNames = ['مادة + عمالة', 'توريد فقط', 'تركيب فقط', 'فحص واختبار', 'صيانة', 'تمديدات', 'تشغيل وتسليم'];
 
         foreach ($categories as $c) {
             for ($i = 1; $i <= 10; $i++) {
                 $suffix = $extraNames[$i % count($extraNames)];
-                $code = $c['code'] . '-X' . str_pad((string)$i, 2, '0', STR_PAD_LEFT);
+                $code = $c['code'] . '-X' . str_pad((string) $i, 2, '0', STR_PAD_LEFT);
                 $expanded[] = [
                     'cat'  => $c['code'],
                     'code' => $code,
                     'ar'   => $c['ar'] . " - بند إضافي {$i} ({$suffix})",
                     'en'   => $c['en'] . " - Extra Item {$i}",
-                    'unit' => $pick(array_keys($unitIds)), // وحدة عشوائية من القائمة
+                    'unit' => $pick(array_keys($unitIds)),
                 ];
             }
         }
@@ -245,11 +238,12 @@ class DemoDataSeeder extends Seeder
 
             $unitId = $unitIds[$w['unit']] ?? $pick($unitIdsList);
 
-            $id = $upsertGetId('work_items',
-                ['code' => $w['code']], // لو العمود مش موجود سيتفلتر، لكن unique هنا لازم يكون موجود غالباً. (في حال نادر جدًا لا يوجد code، ابقى قولي)
+            $id = $upsertGetId(
+                'work_items',
+                ['code' => $w['code']],
                 [
                     'category_id' => $catId,
-                    'unit_id'     => $unitId, // لو العمود موجود
+                    'unit_id'     => $unitId,
                     'name'        => $w['ar'],
                     'name_ar'     => $w['ar'],
                     'name_en'     => $w['en'],
@@ -257,7 +251,6 @@ class DemoDataSeeder extends Seeder
                 ]
             );
 
-            // fallback لو id ما رجعش
             if ($id <= 0) {
                 $id = (int) DB::table('work_items')->where('name', $w['ar'])->value('id');
             }
@@ -267,10 +260,9 @@ class DemoDataSeeder extends Seeder
             }
         }
 
-        // حماية: لو لأي سبب ما اتزرعش work items
         if (count($workItemIds) === 0) {
-            // نزرع واحد مضمون
-            $fallbackId = $upsertGetId('work_items',
+            $fallbackId = $upsertGetId(
+                'work_items',
                 ['code' => 'CONC-FALLBACK'],
                 [
                     'category_id' => $categoryIds['CONC'],
@@ -280,6 +272,7 @@ class DemoDataSeeder extends Seeder
                     'is_active'   => true,
                 ]
             );
+
             if ($fallbackId > 0) {
                 $workItemIds[] = $fallbackId;
             }
@@ -289,27 +282,28 @@ class DemoDataSeeder extends Seeder
         // 7) Projects + BOQs + Items (many)
         // =========================
         $projectTemplates = [
-            ['code' => 'PRJ-MKK-001', 'name' => 'مشروع مكة - مجمع سكني',           'branch' => 'MKK'],
-            ['code' => 'PRJ-MKK-002', 'name' => 'مشروع مكة - توسعة مبنى إداري',    'branch' => 'MKK'],
-            ['code' => 'PRJ-MAD-001', 'name' => 'مشروع المدينة - مركز خدمات',      'branch' => 'MAD'],
-            ['code' => 'PRJ-MAD-002', 'name' => 'مشروع المدينة - صيانة عامة',      'branch' => 'MAD'],
-            ['code' => 'PRJ-RYD-001', 'name' => 'مشروع الرياض - برج إداري',        'branch' => 'RYD'],
-            ['code' => 'PRJ-RYD-002', 'name' => 'مشروع الرياض - فيلات سكنية',      'branch' => 'RYD'],
+            ['code' => 'PRJ-MKK-001', 'name' => 'مشروع مكة - مجمع سكني',        'branch' => 'MKK'],
+            ['code' => 'PRJ-MKK-002', 'name' => 'مشروع مكة - توسعة مبنى إداري', 'branch' => 'MKK'],
+            ['code' => 'PRJ-MAD-001', 'name' => 'مشروع المدينة - مركز خدمات',   'branch' => 'MAD'],
+            ['code' => 'PRJ-MAD-002', 'name' => 'مشروع المدينة - صيانة عامة',   'branch' => 'MAD'],
+            ['code' => 'PRJ-RYD-001', 'name' => 'مشروع الرياض - برج إداري',     'branch' => 'RYD'],
+            ['code' => 'PRJ-RYD-002', 'name' => 'مشروع الرياض - فيلات سكنية',   'branch' => 'RYD'],
         ];
 
         $boqTemplates = [
-            ['code_prefix' => 'CIV',  'name' => 'مقايسة الأعمال المدنية'],
-            ['code_prefix' => 'FIN',  'name' => 'مقايسة التشطيبات'],
-            ['code_prefix' => 'MEP',  'name' => 'مقايسة الأعمال الكهروميكانيكية'],
+            ['code_prefix' => 'CIV', 'name' => 'مقايسة الأعمال المدنية'],
+            ['code_prefix' => 'FIN', 'name' => 'مقايسة التشطيبات'],
+            ['code_prefix' => 'MEP', 'name' => 'مقايسة الأعمال الكهروميكانيكية'],
         ];
 
-        $statuses = ['DRAFT', 'DRAFT', 'DRAFT', 'APPROVED']; // أغلبها Draft
+        // ✅ FIX: حالات صحيحة مطابقة للنظام (بدل APPROVED)
+        $statuses = ['DRAFT', 'DRAFT', 'DRAFT', 'SUBMITTED']; // أغلبها Draft
 
         foreach ($projectTemplates as $p) {
             $branchId = $branchIdsByCode[$p['branch']] ?? $pick(array_values($branchIdsByCode));
 
-            // Create project
-            $projectId = $upsertGetId('projects',
+            $projectId = $upsertGetId(
+                'projects',
                 ['code' => $p['code']],
                 [
                     'company_id' => $companyId,
@@ -325,7 +319,8 @@ class DemoDataSeeder extends Seeder
                 $tpl = $boqTemplates[($b - 1) % count($boqTemplates)];
                 $boqCode = "{$tpl['code_prefix']}-" . $p['code'] . "-B" . $b;
 
-                $boqId = $upsertGetId('boqs',
+                $boqId = $upsertGetId(
+                    'boqs',
                     ['code' => $boqCode],
                     [
                         'company_id'   => $companyId,
@@ -334,8 +329,8 @@ class DemoDataSeeder extends Seeder
                         'status'       => $pick($statuses),
                         'notes'        => null,
                         'total_amount' => 0,
-                        'project_ref'  => $p['code'],
-                        'project_id'   => $projectId, // لو العمود موجود
+                        // ✅ FIX: حذف legacy project_ref (الأساس هو project_id)
+                        'project_id'   => $projectId,
                     ]
                 );
 
@@ -347,12 +342,13 @@ class DemoDataSeeder extends Seeder
                 // Create items: 12 إلى 25 بند لكل BOQ
                 $itemsCount = rand(12, 25);
                 $sort = 1;
+
                 for ($i = 1; $i <= $itemsCount; $i++) {
                     $workItemId = $workItemIds[array_rand($workItemIds)];
                     $unitId     = $pick($unitIdsList);
 
-                    $qty = rand(1, 20) + (rand(0, 9) / 10);          // 1.0 .. 20.9
-                    $price = rand(50, 1500) + (rand(0, 99) / 100);   // 50.00 .. 1500.99
+                    $qty   = rand(1, 20) + (rand(0, 9) / 10);
+                    $price = rand(50, 1500) + (rand(0, 99) / 100);
                     $total = round($qty * $price, 2);
 
                     DB::table('boq_items')->updateOrInsert(
@@ -381,15 +377,12 @@ class DemoDataSeeder extends Seeder
         // =========================
         // 8) Membership + Current Context for Admin
         // =========================
-        // company_user
         $ensurePivot('company_user', ['company_id' => $companyId, 'user_id' => $admin->id], ['is_default' => true]);
 
-        // branch_user (كل الفروع)
         foreach ($branchIdsByCode as $code => $branchId) {
             $ensurePivot('branch_user', ['branch_id' => $branchId, 'user_id' => $admin->id], ['is_default' => $code === 'MKK']);
         }
 
-        // current context = مكة (افتراضي)
         DB::table('users')->where('id', $admin->id)->update(
             $filter('users', [
                 'current_company_id' => $companyId,
