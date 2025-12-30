@@ -8,18 +8,56 @@ use Illuminate\Support\Facades\DB;
 
 class ProgressClaimItemUpdater
 {
-    public function updateCurrentQty(int $claimItemId, float $qtyCurrent): BoqProgressItem
+    /**
+     * Update qty_current for a claim item.
+     * - clamps negative to 0
+     * - clamps to remaining BOQ contract quantity (if available)
+     * - updates qty_total + amounts
+     * - recalculates claim header totals
+     */
+    public function updateCurrentQty(int $claimItemId, float $qtyCurrent, ?string $notes = null): BoqProgressItem
     {
-        return DB::transaction(function () use ($claimItemId, $qtyCurrent) {
+        return DB::transaction(function () use ($claimItemId, $qtyCurrent, $notes) {
 
             /** @var BoqProgressItem $item */
-            $item = BoqProgressItem::query()->lockForUpdate()->findOrFail($claimItemId);
+            $item = BoqProgressItem::query()
+                ->lockForUpdate()
+                ->with('boqItem') // ✅ علشان نعرف كمية المقايسة
+                ->findOrFail($claimItemId);
 
-            $qtyPrev = (float) $item->qty_previous;
+            // ✅ Lock claim too (avoid concurrent totals issues)
+            /** @var BoqProgressClaim $claim */
+            $claim = BoqProgressClaim::query()
+                ->lockForUpdate()
+                ->findOrFail($item->claim_id);
+
+            $qtyPrev   = (float) $item->qty_previous;
             $unitPrice = (float) $item->unit_price;
 
             // ✅ منع قيم سالبة
-            $qtyCurrent = max(0.0, $qtyCurrent);
+            $qtyCurrent = max(0.0, (float) $qtyCurrent);
+
+            // ✅ Clamp to BOQ contract quantity if present
+            $boqItem = $item->boqItem;
+            if ($boqItem) {
+                // حاول نقرأ الكمية المتعاقد عليها من أي اسم شائع بدون ما نكسر
+                $contractQty = null;
+
+                foreach (['qty_contract', 'contract_qty', 'quantity', 'qty'] as $field) {
+                    if (isset($boqItem->{$field}) && $boqItem->{$field} !== null) {
+                        $contractQty = (float) $boqItem->{$field};
+                        break;
+                    }
+                }
+
+                if ($contractQty !== null && $contractQty > 0) {
+                    // لا نسمح أن إجمالي (سابق + حالي) يتجاوز كمية العقد
+                    $maxCurrent = max(0.0, $contractQty - $qtyPrev);
+                    if ($qtyCurrent > $maxCurrent) {
+                        $qtyCurrent = $maxCurrent;
+                    }
+                }
+            }
 
             $qtyTotal = $qtyPrev + $qtyCurrent;
 
@@ -31,11 +69,11 @@ class ProgressClaimItemUpdater
                 'qty_total'       => $qtyTotal,
                 'amount_current'  => $amountCurrent,
                 'amount_total'    => $amountTotal,
+                'notes'           => $notes ?? $item->notes,
             ])->save();
 
             // ✅ بعد تحديث أي بند: أعد حساب الهيدر (A/B/C/D/VAT/Net)
-            $claim = BoqProgressClaim::query()->findOrFail($item->claim_id);
-            app(ProgressClaimCalculator::class)->recalculate($claim);
+            app(ProgressClaimCalculator::class)->recalculate($claim->fresh());
 
             return $item->fresh();
         });

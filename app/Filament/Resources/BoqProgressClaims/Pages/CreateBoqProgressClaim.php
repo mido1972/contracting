@@ -13,10 +13,22 @@ class CreateBoqProgressClaim extends CreateRecord
 
     protected function afterCreate(): void
     {
-        // ✅ توليد البنود من BOQ
+        // ✅ 1) توليد بنود المستخلص من BOQ
         app(ProgressClaimBuilder::class)->initializeItems($this->record);
 
-        // ✅ حساب الإجماليات بعد توليد البنود
-        app(ProgressClaimCalculator::class)->recalculate($this->record);
+        // ✅ 2) حساب الإجماليات بعد توليد البنود
+        $claim = $this->record->fresh();
+        app(ProgressClaimCalculator::class)->recalculate($claim);
+
+        // ✅ 3) تحديث السجل المحلي
+        $this->record = $claim->fresh();
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        // ✅ بعد الإنشاء افتح صفحة Edit مباشرة (زي برنامج الـ ERP)
+        return BoqProgressClaimResource::getUrl('edit', [
+            'record' => $this->record->getKey(),
+        ]);
     }
 }

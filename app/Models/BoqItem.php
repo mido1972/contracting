@@ -10,6 +10,13 @@ class BoqItem extends Model
 {
     protected $table = 'boq_items';
 
+    /**
+     * ✅ عشان اسم البند يظهر بسرعة بدون N+1
+     */
+    protected $with = [
+        'workItem:id,name',
+    ];
+
     protected $fillable = [
         'boq_id',
         'work_item_id',
@@ -28,11 +35,21 @@ class BoqItem extends Model
         'sort_order'  => 'integer',
     ];
 
+    /**
+     * ✅ accessor موحد علشان نقدر نستخدم boqItem.name في أي مكان
+     * الاسم الأساسي للبند جاي من WorkItem
+     */
+    public function getNameAttribute(): string
+    {
+        // لو WorkItem عنده حقل مختلف غير name (مثلاً title)، غيره هنا مرة واحدة فقط
+        return (string) ($this->workItem?->name ?? '');
+    }
+
     protected static function booted(): void
     {
         // 1) حساب إجمالي السطر قبل الحفظ
         static::saving(function (BoqItem $item) {
-            $qty = (float) ($item->quantity ?? 0);
+            $qty   = (float) ($item->quantity ?? 0);
             $price = (float) ($item->unit_price ?? 0);
 
             $item->total_price = round($qty * $price, 2);

@@ -12,6 +12,12 @@ class BoqProgressClaim extends Model
 {
     protected $table = 'boq_progress_claims';
 
+    // ✅ Status values (ثابتة)
+    public const STATUS_DRAFT     = 'DRAFT';
+    public const STATUS_SUBMITTED = 'SUBMITTED';
+    public const STATUS_APPROVED  = 'APPROVED';
+    public const STATUS_REJECTED  = 'REJECTED';
+
     protected $fillable = [
         'company_id',
         'branch_id',
@@ -31,21 +37,35 @@ class BoqProgressClaim extends Model
     ];
 
     protected $casts = [
-        'claim_date' => 'date',
-        'total_a_cumulative' => 'decimal:2',
-        'total_b_previous' => 'decimal:2',
-        'total_c_retention' => 'decimal:2',
-        'total_d_deductions' => 'decimal:2',
-        'vat_amount' => 'decimal:2',
-        'net_payable' => 'decimal:2',
+        'claim_no'            => 'integer',
+        'claim_date'          => 'date',
+
+        'total_a_cumulative'  => 'decimal:2',
+        'total_b_previous'    => 'decimal:2',
+        'total_c_retention'   => 'decimal:2',
+        'total_d_deductions'  => 'decimal:2',
+        'vat_amount'          => 'decimal:2',
+        'net_payable'         => 'decimal:2',
+    ];
+
+    /**
+     * ✅ Defaults تمنع nulls في الواجهة/الحسابات
+     */
+    protected $attributes = [
+        'status'             => self::STATUS_DRAFT,
+        'total_a_cumulative' => 0,
+        'total_b_previous'   => 0,
+        'total_c_retention'  => 0,
+        'total_d_deductions' => 0,
+        'vat_amount'         => 0,
+        'net_payable'        => 0,
     ];
 
     /*
     |--------------------------------------------------------------------------
-    | Boot (Auto claim_no + context fill)
+    | Boot (Auto claim_no + context fill + previous claim)
     |--------------------------------------------------------------------------
     */
-
     protected static function booted(): void
     {
         static::creating(function (self $claim) {
@@ -89,7 +109,26 @@ class BoqProgressClaim extends Model
                 $claim->claim_date = now()->toDateString();
             }
 
-            // 4) Auto claim_no (per company+branch+boq)
+            // 4) Default status
+            if (! filled($claim->status)) {
+                $claim->status = self::STATUS_DRAFT;
+            }
+
+            // 5) previous_claim_id (آخر مستخلص معتمد لنفس BOQ)
+            if (! filled($claim->previous_claim_id)) {
+                $prev = self::query()
+                    ->where('boq_id', $claim->boq_id)
+                    ->where('status', self::STATUS_APPROVED)
+                    ->orderByDesc('claim_no')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($prev) {
+                    $claim->previous_claim_id = (int) $prev->id;
+                }
+            }
+
+            // 6) Auto claim_no (per company+branch+boq) - concurrency safe
             if (! filled($claim->claim_no)) {
                 $claim->claim_no = self::nextClaimNo(
                     companyId: filled($claim->company_id) ? (int) $claim->company_id : null,
@@ -107,6 +146,7 @@ class BoqProgressClaim extends Model
     public static function nextClaimNo(?int $companyId, ?int $branchId, int $boqId): int
     {
         return DB::transaction(function () use ($companyId, $branchId, $boqId) {
+            // قفل جدول المستخلصات أثناء حساب الرقم التالي (PostgreSQL)
             DB::statement('LOCK TABLE boq_progress_claims IN SHARE ROW EXCLUSIVE MODE');
 
             $max = DB::table('boq_progress_claims')
@@ -124,7 +164,6 @@ class BoqProgressClaim extends Model
     | Relationships
     |--------------------------------------------------------------------------
     */
-
     public function boq(): BelongsTo
     {
         return $this->belongsTo(Boq::class, 'boq_id');
@@ -163,5 +202,15 @@ class BoqProgressClaim extends Model
     public function taxes(): HasMany
     {
         return $this->hasMany(BoqProgressTax::class, 'claim_id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
+    public function isLocked(): bool
+    {
+        return in_array($this->status, [self::STATUS_APPROVED, self::STATUS_REJECTED], true);
     }
 }

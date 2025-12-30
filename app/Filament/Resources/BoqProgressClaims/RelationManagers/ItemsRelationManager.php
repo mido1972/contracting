@@ -2,18 +2,15 @@
 
 namespace App\Filament\Resources\BoqProgressClaims\RelationManagers;
 
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Resources\RelationManagers\RelationManager;
-
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-
-use App\Services\Boq\ProgressClaimItemUpdater;
+use App\Filament\Resources\BoqProgressClaims\BoqProgressClaimResource;
 use App\Services\Boq\ProgressClaimCalculator;
+use App\Services\Boq\ProgressClaimItemUpdater;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class ItemsRelationManager extends RelationManager
 {
@@ -24,27 +21,24 @@ class ItemsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->recordTitleAttribute('id')
             ->columns([
-                TextColumn::make('boqItem.item_no')
-                    ->label('#')
-                    ->sortable(),
-
-                TextColumn::make('boqItem.description')
+                TextColumn::make('boqItem.name')
                     ->label('البند')
-                    ->wrap()
-                    ->searchable(),
+                    ->searchable()
+                    ->wrap(),
 
                 TextColumn::make('qty_previous')
                     ->label('سابق')
-                    ->numeric(3),
+                    ->numeric(decimalPlaces: 3),
 
                 TextColumn::make('qty_current')
                     ->label('حالي')
-                    ->numeric(3),
+                    ->numeric(decimalPlaces: 3),
 
                 TextColumn::make('qty_total')
                     ->label('إجمالي')
-                    ->numeric(3),
+                    ->numeric(decimalPlaces: 3),
 
                 TextColumn::make('unit_price')
                     ->label('سعر الوحدة')
@@ -57,39 +51,42 @@ class ItemsRelationManager extends RelationManager
                 TextColumn::make('amount_total')
                     ->label('قيمة الإجمالي')
                     ->money('SAR'),
-
-                TextColumn::make('notes')
-                    ->label('ملاحظات')
-                    ->wrap()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('boq_item_id', 'asc')
             ->actions([
                 EditAction::make()
                     ->label('تعديل')
+                    ->modalHeading('تعديل بند المستخلص')
                     ->form([
                         TextInput::make('qty_current')
                             ->label('كمية الحالي')
-                            ->required()
                             ->numeric()
-                            ->rules(['min:0']),
+                            ->required()
+                            ->rule('min:0'),
 
                         Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3),
                     ])
-                    ->after(function ($record, array $data): void {
-                        // ✅ تحديث كمية البند والحسابات الخاصة بالبند
-                        app(ProgressClaimItemUpdater::class)
-                            ->updateCurrentQty($record->id, (float) ($data['qty_current'] ?? 0));
+                    ->using(function ($record, array $data) {
+                        // ✅ 1) تحديث البند (qty_current) وإعادة حساب سطور البند
+                        app(ProgressClaimItemUpdater::class)->updateCurrentQty(
+                            $record->id,
+                            (float) $data['qty_current'],
+                            $data['notes'] ?? null
+                        );
 
-                        // ✅ إعادة حساب ملخص المستخلص بالكامل (A/B/C/D/VAT/Net)
-                        $claim = $this->getOwnerRecord()->refresh();
+                        // ✅ 2) إعادة حساب ملخص المستخلص بالكامل
+                        $claim = $this->getOwnerRecord()->fresh();
                         app(ProgressClaimCalculator::class)->recalculate($claim);
-                    }),
 
-                DeleteAction::make()
-                    ->label('حذف'),
-            ]);
+                        // ✅ 3) Redirect لنفس صفحة Edit علشان الـ Summary يتحدث فورًا
+                        return redirect(
+                            BoqProgressClaimResource::getUrl('edit', [
+                                'record' => $claim->getKey(),
+                            ])
+                        );
+                    }),
+            ])
+            ->defaultSort('id', 'asc');
     }
 }
