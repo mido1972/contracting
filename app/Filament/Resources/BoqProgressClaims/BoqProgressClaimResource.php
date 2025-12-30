@@ -7,6 +7,7 @@ use App\Filament\Resources\BoqProgressClaims\Pages\EditBoqProgressClaim;
 use App\Filament\Resources\BoqProgressClaims\Pages\ListBoqProgressClaims;
 use App\Filament\Resources\BoqProgressClaims\Schemas\BoqProgressClaimForm;
 use App\Filament\Resources\BoqProgressClaims\Tables\BoqProgressClaimsTable;
+use App\Filament\Resources\BoqProgressClaims\RelationManagers\ItemsRelationManager;
 use App\Models\BoqProgressClaim;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -34,6 +35,13 @@ class BoqProgressClaimResource extends Resource
     public static function table(Table $table): Table
     {
         return BoqProgressClaimsTable::configure($table);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            ItemsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
