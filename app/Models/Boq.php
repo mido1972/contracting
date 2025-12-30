@@ -119,6 +119,14 @@ class Boq extends Model
         return $this->hasMany(BoqItem::class, 'boq_id');
     }
 
+    /**
+     * ✅ Progress Claims (المستخلصات) المرتبطة بالمقايسة
+     */
+    public function progressClaims(): HasMany
+    {
+        return $this->hasMany(BoqProgressClaim::class, 'boq_id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Helpers
